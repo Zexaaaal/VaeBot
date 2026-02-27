@@ -35,6 +35,7 @@ module.exports = {
                 .setDescription('Change la photo du bot pour ce serveur (admin)')
                 .addAttachmentOption(opt => opt.setName('image').setDescription("L'image à utiliser"))
                 .addStringOption(opt => opt.setName('url').setDescription("L'URL de l'image à utiliser"))
+                .addBooleanOption(opt => opt.setName('global').setDescription("Changer l'avatar partout (pas besoin de boost)"))
         ),
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
@@ -272,6 +273,7 @@ module.exports = {
 
             const attachment = interaction.options.getAttachment('image');
             const url = interaction.options.getString('url');
+            const global = interaction.options.getBoolean('global') || false;
 
             const avatarUrl = attachment ? attachment.url : url;
 
@@ -282,8 +284,13 @@ module.exports = {
             await interaction.deferReply({ ephemeral: true });
 
             try {
-                await interaction.guild.members.me.setAvatar(avatarUrl);
-                await interaction.editReply({ content: "✅ L'avatar du bot a été mis à jour pour ce serveur !" });
+                if (global) {
+                    await interaction.client.user.setAvatar(avatarUrl);
+                    await interaction.editReply({ content: "✅ L'avatar global du bot a été mis à jour partout !" });
+                } else {
+                    await interaction.guild.members.me.setAvatar(avatarUrl);
+                    await interaction.editReply({ content: "✅ L'avatar du bot a été mis à jour pour ce serveur !" });
+                }
             } catch (error) {
                 console.error(error);
                 if (error.code === 50035) {
