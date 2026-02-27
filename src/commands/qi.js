@@ -29,6 +29,12 @@ module.exports = {
         .addSubcommand(subcmd =>
             subcmd.setName('points')
                 .setDescription('Affiche votre QI actuel')
+        )
+        .addSubcommand(subcmd =>
+            subcmd.setName('pfp')
+                .setDescription('Change la photo du bot pour ce serveur (admin)')
+                .addAttachmentOption(opt => opt.setName('image').setDescription("L'image à utiliser"))
+                .addStringOption(opt => opt.setName('url').setDescription("L'URL de l'image à utiliser"))
         ),
     async execute(interaction) {
         const subcommand = interaction.options.getSubcommand();
@@ -259,6 +265,35 @@ module.exports = {
                 .setColor(qi >= 100 ? 0x00FF00 : 0xFF0000);
 
             await interaction.reply({ embeds: [embed], ephemeral: true });
+        } else if (subcommand === 'pfp') {
+            if (interaction.user.id !== '219581513119825931') {
+                return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
+            }
+
+            const attachment = interaction.options.getAttachment('image');
+            const url = interaction.options.getString('url');
+
+            const avatarUrl = attachment ? attachment.url : url;
+
+            if (!avatarUrl) {
+                return interaction.reply({ content: "Veuillez fournir une image via pièce jointe ou un lien URL.", ephemeral: true });
+            }
+
+            await interaction.deferReply({ ephemeral: true });
+
+            try {
+                await interaction.guild.members.me.setAvatar(avatarUrl);
+                await interaction.editReply({ content: "✅ L'avatar du bot a été mis à jour pour ce serveur !" });
+            } catch (error) {
+                console.error(error);
+                if (error.code === 50035) {
+                    await interaction.editReply({ content: "❌ Erreur : Format d'image invalide ou lien incorrect." });
+                } else if (error.code === 50001) {
+                    await interaction.editReply({ content: "❌ Erreur : Le bot n'a pas la permission de changer son avatar (vérifiez les permissions)." });
+                } else {
+                    await interaction.editReply({ content: "❌ Une erreur est survenue lors de la mise à jour de l'avatar. (Note: Le serveur doit avoir un niveau de Boost suffisant pour les avatars personnalisés)" });
+                }
+            }
         }
     }
 };
