@@ -1,0 +1,52 @@
+const { Events, EmbedBuilder } = require('discord.js');
+const config = require('../config');
+
+module.exports = {
+    name: Events.ClientReady,
+    once: true,
+    async execute(client) {
+        console.log(`Ready! Logged in as ${client.user.tag}`);
+
+        // Check for the target channel
+        const targetChannel = await client.channels.fetch(config.TARGET_CHANNEL_ID).catch(() => null);
+        if (!targetChannel) {
+            console.log("Dedicated channel not found. Please verify TARGET_CHANNEL_ID in config.");
+            return;
+        }
+
+        // Fetch members to initialize their QI to 100 in database
+        await targetChannel.guild.members.fetch();
+        const { getUserInfo } = require('../database');
+        targetChannel.guild.members.cache.forEach(member => {
+            if (!member.user.bot) {
+                getUserInfo(member.id);
+            }
+        });
+
+        // Try to find if we already posted rules
+        const messages = await targetChannel.messages.fetch({ limit: 10 });
+        const botMessages = messages.filter(m => m.author.id === client.user.id);
+
+        let rulesEmbedMsg = null;
+        for (const msg of botMessages.values()) {
+            if (msg.embeds.length > 0 && msg.embeds[0].title === '🧠 Bienvenue dans le Système de QI') {
+                rulesEmbedMsg = msg;
+                break;
+            }
+        }
+
+        const embedBuilder = new EmbedBuilder()
+            .setTitle('🧠 Bienvenue dans le Système de QI')
+            .setDescription('Chaque utilisateur commence avec 100 de QI. Vos actions vont faire fluctuer ce score !\n\nUtilisez la commande `/qi vote` pour attribuer un bonus ou malus (réservé aux décisionnaires avec le rôle QI).\nUtilisez la commande `/qi roll` (une fois toutes les 48h) pour un effet aléatoire.\nUtilisez la commande `/qi rank` pour afficher le scoreboard.')
+            .setColor(0x0099FF);
+
+        if (rulesEmbedMsg) {
+            await rulesEmbedMsg.edit({ embeds: [embedBuilder] });
+            console.log("Updated rules in the dedicated channel.");
+        } else {
+            // Send rules
+            await targetChannel.send({ embeds: [embedBuilder] });
+            console.log("Sent rules to the dedicated channel.");
+        }
+    }
+};

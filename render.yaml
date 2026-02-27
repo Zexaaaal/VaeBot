@@ -1,0 +1,17 @@
+services:
+  - type: worker
+    name: discord-qi-bot
+    runtime: node
+    buildCommand: npm install && npm run deploy
+    startCommand: npm start
+    envVars:
+      - key: DISCORD_TOKEN
+        sync: false
+      - key: DISCORD_CLIENT_ID
+        sync: false
+      - key: DISCORD_GUILD_ID
+        sync: false
+    disk:
+      name: bot-data
+      mountPath: /data
+      sizeGB: 1
