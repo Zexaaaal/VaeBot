@@ -26,6 +26,6 @@ module.exports = {
     { label: "Ne s'est pas lavé les mains", points: -5 },
     { label: "N'a pas complété ses weeklies sur Warframe", points: -10 },
     { label: "Joue Saryn", points: -15 },
-    { label: "A dit si j'aurais", points: -20 }
+    { label: "Dit si j'aurais trop souvent", points: -20 }
   ]
 };

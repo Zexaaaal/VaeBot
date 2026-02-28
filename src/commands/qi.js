@@ -104,13 +104,20 @@ module.exports = {
             const userId = interaction.user.id;
             const user = getUserInfo(userId);
 
-            // Fixed 48h cycle logic
-            const CYCLE_DURATION = 48 * 60 * 60 * 1000;
-            const REFERENCE_DATE = new Date('2024-01-01T00:00:00Z').getTime();
-            const nowTime = Date.now();
-            const elapsed = (nowTime - REFERENCE_DATE) % CYCLE_DURATION;
-            const cycleStart = nowTime - elapsed;
-            const cycleEnd = cycleStart + CYCLE_DURATION;
+            // Logic: 48h cycles starting from the 1st of each month (1st-2nd, 3rd-4th, ...)
+            const now = new Date();
+            const dayOfMonth = now.getDate();
+
+            // Calculate when the next 2-day block starts (at 00:00)
+            const isFirstDayOfBlock = (dayOfMonth % 2 === 1);
+            const cycleEndDay = isFirstDayOfBlock ? dayOfMonth + 2 : dayOfMonth + 1;
+
+            // We create the date at 00:00 (local VPS time, usually UTC)
+            // Then we subtract 1 hour to target 00:00 Paris (UTC+1)
+            const cycleEndLocalDate = new Date(now.getFullYear(), now.getMonth(), cycleEndDay, 0, 0, 0);
+            const cycleEnd = cycleEndLocalDate.getTime() - (1 * 60 * 60 * 1000);
+            const nowTime = now.getTime();
+            const cycleStart = cycleEnd - (48 * 60 * 60 * 1000);
 
             if (user.last_roll_date) {
                 const lastRoll = new Date(user.last_roll_date).getTime();
@@ -121,7 +128,6 @@ module.exports = {
 
             const randomEvent = config.DAILY_ROLL_EVENTS[Math.floor(Math.random() * config.DAILY_ROLL_EVENTS.length)];
 
-            const now = new Date();
             const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
             addModification(userId, randomEvent.points, `Roll: ${randomEvent.label}`, endOfDay.toISOString());
