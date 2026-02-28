@@ -18,14 +18,14 @@ module.exports = {
     { label: "A fait rire tout le monde", value: "bonus_rire", points: 20 }
   ],
   DAILY_ROLL_EVENTS: [
-    { label: "A ouvert ses volets", points: 15 },
+    { label: "A ouvert ses volets", points: 20 },
     { label: "Buff du Dieu Volt", points: 15 },
     { label: "A pensé à roll", points: 10 },
     { label: "A fait une bonne action", points: 10 },
     { label: "S'est pas lavé les mains", points: -5 },
     { label: "Ne s'est pas lavé les mains", points: -5 },
     { label: "N'a pas complété ses weeklies sur Warframe", points: -10 },
-    { label: "Joue Saryn", points: -1 },
+    { label: "Joue Saryn", points: -15 },
     { label: "A dit si j'aurais", points: -20 }
   ]
 };
