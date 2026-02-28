@@ -6,21 +6,26 @@ module.exports = {
   MALUS_LIST: [
     { label: "Bruits de bouches", value: "malus_bruits_bouche", points: -10 },
     { label: "Tics de langage répétés", value: "malus_tics_langage", points: -5 },
-    { label: "Rots", value: "malus_rots", points: -7 },
-    { label: "Pets", value: "malus_pets", points: -3 },
-    { label: "Élément de culture général manquant", value: "malus_culture_g", points: -15 },
-    { label: "Utilisation de l'IA pour une tâche simple", value: "malus_ia_simple", points: -20 }
+    { label: "Rots & Pets", value: "malus_rots", points: -7 },
+    { label: "Remarque stupide", value: "malus_remarque_stupide", points: -10 },
+    { label: "Utilisation de l'IA pour une tâche simple", value: "malus_ia_simple", points: -15 },
+    { label: "Histoire trop longue, monologue, yapping", value: "malus_yapping", points: -20 },
   ],
   BONUS_LIST: [
     { label: "Compliment", value: "bonus_compliment", points: 10 },
-    { label: "Admet ses erreurs", value: "bonus_admet_erreur", points: 15 }
+    { label: "Admet ses erreurs", value: "bonus_admet_erreur", points: 15 },
+    { label: "A aidé quelqu'un", value: "bonus_aide", points: 10 },
+    { label: "A fait rire tout le monde", value: "bonus_rire", points: 20 }
   ],
   DAILY_ROLL_EVENTS: [
-    { label: "Illumination divine !", points: 15 },
-    { label: "Bonne nuit de sommeil", points: 5 },
-    { label: "A lu un livre intéressant", points: 10 },
-    { label: "S'est cogné l'orteil", points: -5 },
-    { label: "A oublié ses clés", points: -10 },
-    { label: "A scrollé TikTok pendant 3h", points: -15 }
+    { label: "A ouvert ses volets", points: 15 },
+    { label: "Buff du Dieu Volt", points: 15 },
+    { label: "A pensé à roll", points: 10 },
+    { label: "A fait une bonne action", points: 10 },
+    { label: "S'est pas lavé les mains", points: -5 },
+    { label: "Ne s'est pas lavé les mains", points: -5 },
+    { label: "N'a pas complété ses weeklies sur Warframe", points: -10 },
+    { label: "Joue Saryn", points: -1 },
+    { label: "A dit si j'aurais", points: -20 }
   ]
 };

@@ -8,19 +8,19 @@ module.exports = {
         .setDescription('Gère le QI des utilisateurs')
         .addSubcommand(subcmd =>
             subcmd.setName('vote')
-                .setDescription('Proposer un bonus ou un malus pour un utilisateur')
+                .setDescription('Le châtiment suprême... ou la grâce divine')
         )
         .addSubcommand(subcmd =>
             subcmd.setName('roll')
-                .setDescription('Tire un bonus/malus aléatoire pour la journée')
+                .setDescription('Un bonbon ou une bombe?')
         )
         .addSubcommand(subcmd =>
             subcmd.setName('rank')
-                .setDescription('Affiche le classement QI de tous les membres')
+                .setDescription('Le classement QI de tous les membres')
         )
         .addSubcommand(subcmd =>
             subcmd.setName('points')
-                .setDescription('Affiche votre QI actuel')
+                .setDescription('QI actuel')
         ),
     async execute(interaction) {
         if (interaction.guildId !== config.ALLOWED_GUILD_ID) {
@@ -39,7 +39,6 @@ module.exports = {
                 return interaction.reply({ content: `Cette commande doit être utilisée dans le salon dédié <#${config.TARGET_CHANNEL_ID}>.`, ephemeral: true });
             }
 
-            // Fetch guild members to ensure they are cached
             await interaction.guild.members.fetch();
 
             let targetMembers = [];
@@ -116,10 +115,7 @@ module.exports = {
             if (user.last_roll_date) {
                 const lastRoll = new Date(user.last_roll_date).getTime();
                 if (lastRoll >= cycleStart) {
-                    const remainingMs = cycleEnd - nowTime;
-                    const hours = Math.floor(remainingMs / (1000 * 60 * 60));
-                    const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
-                    return interaction.reply({ content: `Vous avez déjà utilisé votre tirage pour ce cycle ! Revenez dans ${hours}h ${minutes}m.`, ephemeral: true });
+                    return interaction.reply({ content: `Vous avez déjà utilisé votre tirage pour ce cycle ! Revenez **<t:${Math.floor(cycleEnd / 1000)}:R>**.`, ephemeral: true });
                 }
             }
 
@@ -155,9 +151,7 @@ module.exports = {
                         }
                     }
 
-                    const remainingMs = cycleEnd - nowTime;
-                    const hoursLeft = Math.floor(remainingMs / (1000 * 60 * 60));
-                    const dailyTitle = `🎲 Tirages - Fin du cycle dans ${hoursLeft}h`;
+                    const dailyTitle = `🎲 Tirages - Fin <t:${Math.floor(cycleEnd / 1000)}:R>`;
 
                     if (dailyMsg) {
                         const oldEmbed = dailyMsg.embeds[0];
