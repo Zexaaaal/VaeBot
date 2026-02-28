@@ -20,7 +20,7 @@ module.exports = {
         )
         .addSubcommand(subcmd =>
             subcmd.setName('resetall')
-                .setDescription('Reset le QI de tout le monde à 100 (admin)')
+                .setDescription('Reset le QI de tout le monde à 0 (admin)')
         )
         .addSubcommand(subcmd =>
             subcmd.setName('rank')
@@ -36,8 +36,18 @@ module.exports = {
                 .addAttachmentOption(opt => opt.setName('image').setDescription("L'image à utiliser"))
                 .addStringOption(opt => opt.setName('url').setDescription("L'URL de l'image à utiliser"))
                 .addBooleanOption(opt => opt.setName('global').setDescription("Changer l'avatar partout (pas besoin de boost)"))
+        )
+        .addSubcommand(subcmd =>
+            subcmd.setName('set')
+                .setDescription('Modifie le QI d’un utilisateur (admin)')
+                .addUserOption(opt => opt.setName('utilisateur').setDescription("L'utilisateur à modifier").setRequired(true))
+                .addIntegerOption(opt => opt.setName('value').setDescription("La valeur à ajouter/soustraire").setRequired(true))
         ),
     async execute(interaction) {
+        if (interaction.guildId !== config.ALLOWED_GUILD_ID) {
+            return interaction.reply({ content: "Cette fonctionnalité n'est pas activée sur ce serveur.", ephemeral: true });
+        }
+
         const subcommand = interaction.options.getSubcommand();
 
         if (subcommand === 'vote') {
@@ -116,15 +126,21 @@ module.exports = {
             const userId = interaction.user.id;
             const user = getUserInfo(userId);
 
-            if (user.last_roll_date) {
-                const lastRoll = new Date(user.last_roll_date);
-                const now = new Date();
-                const diffTime = now.getTime() - lastRoll.getTime();
-                const diffHours = diffTime / (1000 * 60 * 60);
+            // Fixed 48h cycle logic
+            const CYCLE_DURATION = 48 * 60 * 60 * 1000;
+            const REFERENCE_DATE = new Date('2024-01-01T00:00:00Z').getTime();
+            const nowTime = Date.now();
+            const elapsed = (nowTime - REFERENCE_DATE) % CYCLE_DURATION;
+            const cycleStart = nowTime - elapsed;
+            const cycleEnd = cycleStart + CYCLE_DURATION;
 
-                if (diffHours < 48) {
-                    const remaining = Math.ceil(48 - diffHours);
-                    return interaction.reply({ content: `Vous avez déjà utilisé votre tirage ! Revenez dans environ ${remaining} heure(s).`, ephemeral: true });
+            if (user.last_roll_date) {
+                const lastRoll = new Date(user.last_roll_date).getTime();
+                if (lastRoll >= cycleStart) {
+                    const remainingMs = cycleEnd - nowTime;
+                    const hours = Math.floor(remainingMs / (1000 * 60 * 60));
+                    const minutes = Math.floor((remainingMs % (1000 * 60 * 60)) / (1000 * 60));
+                    return interaction.reply({ content: `Vous avez déjà utilisé votre tirage pour ce cycle ! Revenez dans ${hours}h ${minutes}m.`, ephemeral: true });
                 }
             }
 
@@ -148,36 +164,28 @@ module.exports = {
                 if (channel) {
                     const messages = await channel.messages.fetch({ limit: 50 });
 
-                    // Find existing roll embed (any that starts with 🎲 Tirages -)
+                    // Find existing roll embed
                     let dailyMsg = messages.find(m => m.author.id === interaction.client.user.id && m.embeds.length > 0 && m.embeds[0].title && m.embeds[0].title.startsWith('🎲 Tirages -'));
 
-                    // Check if existing embed is older than 48h
+                    // Check if existing embed is from a previous cycle
                     if (dailyMsg) {
-                        const firstRoll = getFirstRollTimestamp();
-                        if (firstRoll) {
-                            const firstRollDate = new Date(firstRoll);
-                            const now = new Date();
-                            const diffHours = (now.getTime() - firstRollDate.getTime()) / (1000 * 60 * 60);
-                            if (diffHours >= 48) {
-                                // Delete old embed and clear roll dates to start a new cycle
-                                await dailyMsg.delete().catch(() => null);
-                                const { clearAllRollDates } = require('../database');
-                                clearAllRollDates();
-                                // Re-set current user's roll date since they just rolled
-                                updateUserRollDate(userId, new Date().toISOString());
-                                dailyMsg = null;
-                            }
+                        const msgTimestamp = dailyMsg.createdTimestamp;
+                        if (msgTimestamp < cycleStart) {
+                            await dailyMsg.delete().catch(() => null);
+                            dailyMsg = null;
                         }
                     }
 
-                    const nowDate = new Date();
-                    const dateStr = nowDate.toLocaleDateString('fr-FR');
-                    const dailyTitle = `🎲 Tirages - ${dateStr}`;
+                    const remainingMs = cycleEnd - nowTime;
+                    const hoursLeft = Math.floor(remainingMs / (1000 * 60 * 60));
+                    const dailyTitle = `🎲 Tirages - Fin du cycle dans ${hoursLeft}h`;
 
                     if (dailyMsg) {
                         const oldEmbed = dailyMsg.embeds[0];
                         const newDesc = oldEmbed.description + '\n' + rollLine;
-                        const newEmbed = EmbedBuilder.from(oldEmbed).setDescription(newDesc);
+                        const newEmbed = EmbedBuilder.from(oldEmbed)
+                            .setTitle(dailyTitle)
+                            .setDescription(newDesc);
                         await dailyMsg.edit({ embeds: [newEmbed] });
                     } else {
                         const newEmbed = new EmbedBuilder()
@@ -204,20 +212,20 @@ module.exports = {
                 updateChannelStatus(vc);
             }
         } else if (subcommand === 'rollreset') {
-            if (interaction.user.id !== '219581513119825931') {
+            if (interaction.user.id !== config.OWNER_ID) {
                 return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
             }
             const { clearAllRollDates } = require('../database');
             clearAllRollDates();
             await interaction.reply({ content: "Les tirages ont été réinitialisés pour tout le monde !", ephemeral: true });
         } else if (subcommand === 'resetall') {
-            if (interaction.user.id !== '219581513119825931') {
+            if (interaction.user.id !== config.OWNER_ID) {
                 return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
             }
             const { resetAllQi } = require('../database');
             resetAllQi();
 
-            await interaction.reply({ content: "✅ Le QI de tous les membres a été réinitialisé à 100.", ephemeral: true });
+            await interaction.reply({ content: "✅ Le QI de tous les membres a été réinitialisé à 0.", ephemeral: true });
 
             // Update all VCs that have at least one user
             const { updateChannelStatus } = require('../utils/statusUpdater');
@@ -234,6 +242,7 @@ module.exports = {
                 const member = interaction.guild.members.cache.get(u.id);
                 if (!member || member.user.bot) continue;
                 const qi = calculateTotalQi(u.id);
+                if (qi === 0) continue; // Exclude users with no fluctuations (exactly 0)
                 const losses = getLast7DaysLosses(u.id);
                 rows.push({ name: member.displayName, qi, losses });
             }
@@ -242,7 +251,7 @@ module.exports = {
 
             let table = '```\n';
             table += 'Pseudo'.padEnd(20) + 'QI'.padStart(6) + '  7j perdu'.padStart(10) + '\n';
-            table += '─'.repeat(36) + '\n';
+            table += '─'.repeat(38) + '\n';
             for (const row of rows) {
                 const lossStr = row.losses < 0 ? `${row.losses}` : '0';
                 table += row.name.slice(0, 18).padEnd(20) + String(row.qi).padStart(6) + lossStr.padStart(10) + '\n';
@@ -267,7 +276,7 @@ module.exports = {
 
             await interaction.reply({ embeds: [embed], ephemeral: true });
         } else if (subcommand === 'pfp') {
-            if (interaction.user.id !== '219581513119825931') {
+            if (interaction.user.id !== config.OWNER_ID) {
                 return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
             }
 
@@ -300,6 +309,25 @@ module.exports = {
                 } else {
                     await interaction.editReply({ content: "❌ Une erreur est survenue lors de la mise à jour de l'avatar. (Note: Le serveur doit avoir un niveau de Boost suffisant pour les avatars personnalisés)" });
                 }
+            }
+        } else if (subcommand === 'set') {
+            if (interaction.user.id !== config.OWNER_ID) {
+                return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
+            }
+
+            const targetUser = interaction.options.getUser('utilisateur');
+            const value = interaction.options.getInteger('value');
+
+            const { updateBaseQi } = require('../database');
+            const newQi = updateBaseQi(targetUser.id, value);
+
+            await interaction.reply({ content: `✅ Le QI de <@${targetUser.id}> a été modifié de **${value}**. Nouveau QI de base : **${newQi}**.`, ephemeral: true });
+
+            // Update user's VC if they are in one
+            let vc = interaction.guild.members.cache.get(targetUser.id)?.voice?.channel;
+            if (vc) {
+                const { updateChannelStatus } = require('../utils/statusUpdater');
+                updateChannelStatus(vc);
             }
         }
     }

@@ -78,13 +78,13 @@ module.exports = {
 
                 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
                 const row = new ActionRowBuilder().addComponents(
-                    new ButtonBuilder().setCustomId('vote_yes').setLabel('Pour ✅').setStyle(ButtonStyle.Success),
-                    new ButtonBuilder().setCustomId('vote_no').setLabel('Contre ❌').setStyle(ButtonStyle.Danger)
+                    new ButtonBuilder().setCustomId('vote_yes').setLabel('Pour').setStyle(ButtonStyle.Success),
+                    new ButtonBuilder().setCustomId('vote_no').setLabel('Contre').setStyle(ButtonStyle.Danger)
                 );
 
                 const replyMessage = await interaction.channel.send({ embeds: [embed], components: [row] });
 
-                await interaction.reply({ content: "Le vote a été lancé sur le salon !", ephemeral: true });
+                await interaction.reply({ content: "Le vote est lancé", ephemeral: true });
                 setTimeout(() => interaction.deleteReply().catch(() => null), 3000);
 
                 // Wait for interactions (2 minutes = 120000 ms)
@@ -119,11 +119,11 @@ module.exports = {
                         const currentQi = calculateTotalQi(userConfig.targetId);
 
                         const resultEmbed = new EmbedBuilder()
-                            .setTitle('✅ Vote Approuvé !')
-                            .setDescription(`Le vote pour **${displayName}** est passé !\n\nNouveau QI total : **${currentQi}** 🧠`)
+                            .setTitle('Motion approuvée')
+                            .setDescription(`Le vote pour **${displayName}** est passé !\n\n**Modifications :** ${reasons.join(' | ')}\n\nNouveau QI total : **${currentQi}** 🧠`)
                             .setColor(0x00FF00);
 
-                        await replyMessage.reply({ embeds: [resultEmbed] });
+                        await replyMessage.edit({ embeds: [resultEmbed] });
 
                         // Update VC status
                         let vc = targetMember?.voice?.channel;
@@ -140,10 +140,10 @@ module.exports = {
                         }
                     } else {
                         const resultEmbed = new EmbedBuilder()
-                            .setTitle('❌ Vote Rejeté')
+                            .setTitle('Motion rejetée')
                             .setDescription(`Le vote pour **${displayName}** n'a pas retenu la majorité.`)
                             .setColor(0xFF0000);
-                        await replyMessage.reply({ embeds: [resultEmbed] });
+                        await replyMessage.edit({ embeds: [resultEmbed] });
                     }
                 });
 

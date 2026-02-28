@@ -12,7 +12,7 @@ function initDb() {
     db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
-      base_qi INTEGER DEFAULT 100,
+      base_qi INTEGER DEFAULT 0,
       last_roll_date TEXT
     );
   `);
@@ -33,8 +33,8 @@ function initDb() {
 function getUserInfo(userId) {
     let user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
     if (!user) {
-        db.prepare('INSERT INTO users (id, base_qi) VALUES (?, ?)').run(userId, 100);
-        user = { id: userId, base_qi: 100, last_roll_date: null };
+        db.prepare('INSERT INTO users (id, base_qi) VALUES (?, ?)').run(userId, 0);
+        user = { id: userId, base_qi: 0, last_roll_date: null };
     }
     return user;
 }
@@ -48,7 +48,7 @@ function clearAllRollDates() {
 }
 
 function resetAllQi() {
-    db.prepare('UPDATE users SET base_qi = 100').run();
+    db.prepare('UPDATE users SET base_qi = 0').run();
     db.prepare('DELETE FROM modifications').run();
 }
 

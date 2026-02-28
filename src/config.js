@@ -1,6 +1,8 @@
 module.exports = {
   TARGET_CHANNEL_ID: "1476711679617138840",
   QI_ROLE_ID: "1476711743156649994",
+  ALLOWED_GUILD_ID: "1395734787053850688",
+  OWNER_ID: "219581513119825931",
   MALUS_LIST: [
     { label: "Bruits de bouches", value: "malus_bruits_bouche", points: -10 },
     { label: "Tics de langage répétés", value: "malus_tics_langage", points: -5 },
