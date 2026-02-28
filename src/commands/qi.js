@@ -156,7 +156,7 @@ module.exports = {
 
             const rollLine = `<@${userId}> a roll *${randomEvent.label}* (${randomEvent.points > 0 ? '+' : ''}${randomEvent.points})`;
 
-            await interaction.reply({ content: `🎲 Tirage effectué : **${randomEvent.label}**`, ephemeral: true });
+            await interaction.reply({ content: `Tirage effectué : **${randomEvent.label}**`, ephemeral: true });
 
             const targetChannelId = config.TARGET_CHANNEL_ID;
             if (targetChannelId) {
@@ -295,19 +295,19 @@ module.exports = {
             try {
                 if (global) {
                     await interaction.client.user.setAvatar(avatarUrl);
-                    await interaction.editReply({ content: "✅ L'avatar global du bot a été mis à jour partout !" });
+                    await interaction.editReply({ content: "L'avatar global du bot a été mis à jour partout !" });
                 } else {
                     await interaction.guild.members.me.setAvatar(avatarUrl);
-                    await interaction.editReply({ content: "✅ L'avatar du bot a été mis à jour pour ce serveur !" });
+                    await interaction.editReply({ content: "L'avatar du bot a été mis à jour pour ce serveur !" });
                 }
             } catch (error) {
                 console.error(error);
                 if (error.code === 50035) {
-                    await interaction.editReply({ content: "❌ Erreur : Format d'image invalide ou lien incorrect." });
+                    await interaction.editReply({ content: "Erreur : Format d'image invalide ou lien incorrect." });
                 } else if (error.code === 50001) {
-                    await interaction.editReply({ content: "❌ Erreur : Le bot n'a pas la permission de changer son avatar (vérifiez les permissions)." });
+                    await interaction.editReply({ content: "Erreur : Le bot n'a pas la permission de changer son avatar (vérifiez les permissions)." });
                 } else {
-                    await interaction.editReply({ content: "❌ Une erreur est survenue lors de la mise à jour de l'avatar. (Note: Le serveur doit avoir un niveau de Boost suffisant pour les avatars personnalisés)" });
+                    await interaction.editReply({ content: "Une erreur est survenue lors de la mise à jour de l'avatar. (Note: Le serveur doit avoir un niveau de Boost suffisant pour les avatars personnalisés)" });
                 }
             }
         } else if (subcommand === 'set') {
@@ -321,7 +321,7 @@ module.exports = {
             const { updateBaseQi } = require('../database');
             const newQi = updateBaseQi(targetUser.id, value);
 
-            await interaction.reply({ content: `✅ Le QI de <@${targetUser.id}> a été modifié de **${value}**. Nouveau QI de base : **${newQi}**.`, ephemeral: true });
+            await interaction.reply({ content: `Le QI de <@${targetUser.id}> a été modifié de **${value}**. Nouveau QI de base : **${newQi}**.`, ephemeral: true });
 
             // Update user's VC if they are in one
             let vc = interaction.guild.members.cache.get(targetUser.id)?.voice?.channel;
