@@ -29,9 +29,12 @@ module.exports = {
 
         let rulesEmbedMsg = null;
         for (const msg of botMessages.values()) {
-            if (msg.embeds.length > 0 && msg.embeds[0].title === 'Système de QI') {
-                rulesEmbedMsg = msg;
-                break;
+            if (msg.embeds.length > 0) {
+                const title = msg.embeds[0].title || '';
+                if (title.includes('Système de QI')) {
+                    rulesEmbedMsg = msg;
+                    break;
+                }
             }
         }
 
