@@ -24,4 +24,4 @@ jobs:
             git pull origin master
             npm install
             npm run deploy
-            pm2 restart qi-bot
+            pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot
