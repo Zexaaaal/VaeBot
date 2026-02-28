@@ -190,6 +190,50 @@ module.exports = {
                 const { updateChannelStatus } = require('../utils/statusUpdater');
                 updateChannelStatus(vc);
             }
+        } else if (subcommand === 'rank') {
+            const allUsers = getAllUsers();
+            const rows = [];
+
+            for (const u of allUsers) {
+                const member = interaction.guild.members.cache.get(u.id);
+                if (!member || member.user.bot) continue;
+                const qi = calculateTotalQi(u.id);
+                if (qi === 0) continue; // Exclude users with no fluctuations (exactly 0)
+                const losses = getLast7DaysLosses(u.id);
+                rows.push({ name: member.displayName, qi, losses });
+            }
+
+            rows.sort((a, b) => b.qi - a.qi);
+
+            let table = '```\n';
+            table += 'Pseudo'.padEnd(20) + 'QI'.padStart(6) + '  7j perdu'.padStart(10) + '\n';
+            table += '─'.repeat(38) + '\n';
+            if (rows.length === 0) {
+                table += 'Aucun utilisateur avec des points.\n';
+            } else {
+                for (const row of rows) {
+                    const lossStr = row.losses < 0 ? `${row.losses}` : '0';
+                    table += row.name.slice(0, 18).padEnd(20) + String(row.qi).padStart(6) + lossStr.padStart(10) + '\n';
+                }
+            }
+            table += '```';
+
+            const embed = new EmbedBuilder()
+                .setTitle('🏆 Classement QI')
+                .setDescription(table)
+                .setColor(0x0099FF);
+
+            await interaction.reply({ embeds: [embed], ephemeral: true });
+        } else if (subcommand === 'points') {
+            const userId = interaction.user.id;
+            getUserInfo(userId);
+            const qi = calculateTotalQi(userId);
+
+            const embed = new EmbedBuilder()
+                .setTitle('Votre QI')
+                .setDescription(`Vous avez actuellement **${qi}** de QI.`)
+                .setColor(qi >= 0 ? 0x00FF00 : 0xFF0000);
+
             await interaction.reply({ embeds: [embed], ephemeral: true });
         }
     }
