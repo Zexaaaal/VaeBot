@@ -104,19 +104,21 @@ module.exports = {
             const userId = interaction.user.id;
             const user = getUserInfo(userId);
 
-            // Logic: 48h cycles starting from the 1st of each month (1st-2nd, 3rd-4th, ...)
+            // Robust calculation aligned with Paris time (UTC+1)
             const now = new Date();
-            const dayOfMonth = now.getDate();
-
-            // Calculate when the next 2-day block starts (at 00:00)
-            const isFirstDayOfBlock = (dayOfMonth % 2 === 1);
-            const cycleEndDay = isFirstDayOfBlock ? dayOfMonth + 2 : dayOfMonth + 1;
-
-            // We create the date at 00:00 (local VPS time, usually UTC)
-            // Then we subtract 1 hour to target 00:00 Paris (UTC+1)
-            const cycleEndLocalDate = new Date(now.getFullYear(), now.getMonth(), cycleEndDay, 0, 0, 0);
-            const cycleEnd = cycleEndLocalDate.getTime() - (1 * 60 * 60 * 1000);
             const nowTime = now.getTime();
+            const PARIS_OFFSET = 1 * 60 * 60 * 1000;
+            const nowParis = new Date(nowTime + PARIS_OFFSET);
+
+            const day = nowParis.getUTCDate();
+            const month = nowParis.getUTCMonth();
+            const year = nowParis.getUTCFullYear();
+
+            // Cycles: 1-2 (ends on 3rd), 3-4 (ends on 5th), etc.
+            let endDay = (day % 2 === 1) ? day + 2 : day + 1;
+
+            // cycleEnd in UTC is (endDay at 00:00 Paris) - Offset
+            const cycleEnd = Date.UTC(year, month, endDay, 0, 0, 0) - PARIS_OFFSET;
             const cycleStart = cycleEnd - (48 * 60 * 60 * 1000);
 
             if (user.last_roll_date) {
