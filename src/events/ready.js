@@ -29,24 +29,21 @@ module.exports = {
 
         let rulesEmbedMsg = null;
         for (const msg of botMessages.values()) {
-            if (msg.embeds.length > 0 && msg.embeds[0].title === '🧠 Bienvenue dans le Système de QI') {
+            if (msg.embeds.length > 0 && msg.embeds[0].title === 'Système de QI') {
                 rulesEmbedMsg = msg;
                 break;
             }
         }
 
         const embedBuilder = new EmbedBuilder()
-            .setTitle('🧠 Bienvenue dans le Système de QI')
-            .setDescription('Chaque utilisateur commence avec 100 de QI. Vos actions vont faire fluctuer ce score !\n\nUtilisez la commande `/qi vote` pour attribuer un bonus ou malus (réservé aux décisionnaires avec le rôle QI).\nUtilisez la commande `/qi roll` (une fois toutes les 48h) pour un effet aléatoire.\nUtilisez la commande `/qi rank` pour afficher le scoreboard.')
+            .setTitle('Système de QI')
+            .setDescription('Chaque utilisateur commence avec 0 de QI.\n\nUtilisez la commande `/qi vote` pour attribuer un bonus ou malus (réservé aux décisionnaires avec le rôle QI).\nUtilisez la commande `/qi roll` (une fois toutes les 48h) pour un effet aléatoire.\nUtilisez la commande `/qi rank` pour afficher le scoreboard.\nUtilisez la commande `/qi points` pour afficher vos points.')
             .setColor(0x0099FF);
 
         if (rulesEmbedMsg) {
             await rulesEmbedMsg.edit({ embeds: [embedBuilder] });
-            console.log("Updated rules in the dedicated channel.");
         } else {
-            // Send rules
             await targetChannel.send({ embeds: [embedBuilder] });
-            console.log("Sent rules to the dedicated channel.");
         }
     }
 };

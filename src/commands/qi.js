@@ -15,33 +15,12 @@ module.exports = {
                 .setDescription('Tire un bonus/malus aléatoire pour la journée')
         )
         .addSubcommand(subcmd =>
-            subcmd.setName('rollreset')
-                .setDescription('Bypass le daily roll pour tout le monde (admin)')
-        )
-        .addSubcommand(subcmd =>
-            subcmd.setName('resetall')
-                .setDescription('Reset le QI de tout le monde à 0 (admin)')
-        )
-        .addSubcommand(subcmd =>
             subcmd.setName('rank')
                 .setDescription('Affiche le classement QI de tous les membres')
         )
         .addSubcommand(subcmd =>
             subcmd.setName('points')
                 .setDescription('Affiche votre QI actuel')
-        )
-        .addSubcommand(subcmd =>
-            subcmd.setName('pfp')
-                .setDescription('Change la photo du bot pour ce serveur (admin)')
-                .addAttachmentOption(opt => opt.setName('image').setDescription("L'image à utiliser"))
-                .addStringOption(opt => opt.setName('url').setDescription("L'URL de l'image à utiliser"))
-                .addBooleanOption(opt => opt.setName('global').setDescription("Changer l'avatar partout (pas besoin de boost)"))
-        )
-        .addSubcommand(subcmd =>
-            subcmd.setName('set')
-                .setDescription('Modifie le QI d’un utilisateur (admin)')
-                .addUserOption(opt => opt.setName('utilisateur').setDescription("L'utilisateur à modifier").setRequired(true))
-                .addIntegerOption(opt => opt.setName('value').setDescription("La valeur à ajouter/soustraire").setRequired(true))
         ),
     async execute(interaction) {
         if (interaction.guildId !== config.ALLOWED_GUILD_ID) {
@@ -211,124 +190,7 @@ module.exports = {
                 const { updateChannelStatus } = require('../utils/statusUpdater');
                 updateChannelStatus(vc);
             }
-        } else if (subcommand === 'rollreset') {
-            if (interaction.user.id !== config.OWNER_ID) {
-                return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
-            }
-            const { clearAllRollDates } = require('../database');
-            clearAllRollDates();
-            await interaction.reply({ content: "Les tirages ont été réinitialisés pour tout le monde !", ephemeral: true });
-        } else if (subcommand === 'resetall') {
-            if (interaction.user.id !== config.OWNER_ID) {
-                return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
-            }
-            const { resetAllQi } = require('../database');
-            resetAllQi();
-
-            await interaction.reply({ content: "✅ Le QI de tous les membres a été réinitialisé à 0.", ephemeral: true });
-
-            // Update all VCs that have at least one user
-            const { updateChannelStatus } = require('../utils/statusUpdater');
-            for (const channel of interaction.guild.channels.cache.values()) {
-                if (channel.isVoiceBased() && channel.members.size > 0 && channel.members.some(m => !m.user.bot)) {
-                    updateChannelStatus(channel);
-                }
-            }
-        } else if (subcommand === 'rank') {
-            const allUsers = getAllUsers();
-            const rows = [];
-
-            for (const u of allUsers) {
-                const member = interaction.guild.members.cache.get(u.id);
-                if (!member || member.user.bot) continue;
-                const qi = calculateTotalQi(u.id);
-                if (qi === 0) continue; // Exclude users with no fluctuations (exactly 0)
-                const losses = getLast7DaysLosses(u.id);
-                rows.push({ name: member.displayName, qi, losses });
-            }
-
-            rows.sort((a, b) => b.qi - a.qi);
-
-            let table = '```\n';
-            table += 'Pseudo'.padEnd(20) + 'QI'.padStart(6) + '  7j perdu'.padStart(10) + '\n';
-            table += '─'.repeat(38) + '\n';
-            for (const row of rows) {
-                const lossStr = row.losses < 0 ? `${row.losses}` : '0';
-                table += row.name.slice(0, 18).padEnd(20) + String(row.qi).padStart(6) + lossStr.padStart(10) + '\n';
-            }
-            table += '```';
-
-            const embed = new EmbedBuilder()
-                .setTitle('🏆 Classement QI')
-                .setDescription(table)
-                .setColor(0x0099FF);
-
             await interaction.reply({ embeds: [embed], ephemeral: true });
-        } else if (subcommand === 'points') {
-            const userId = interaction.user.id;
-            getUserInfo(userId);
-            const qi = calculateTotalQi(userId);
-
-            const embed = new EmbedBuilder()
-                .setTitle('🧠 Votre QI')
-                .setDescription(`Vous avez actuellement **${qi}** de QI.`)
-                .setColor(qi >= 100 ? 0x00FF00 : 0xFF0000);
-
-            await interaction.reply({ embeds: [embed], ephemeral: true });
-        } else if (subcommand === 'pfp') {
-            if (interaction.user.id !== config.OWNER_ID) {
-                return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
-            }
-
-            const attachment = interaction.options.getAttachment('image');
-            const url = interaction.options.getString('url');
-            const global = interaction.options.getBoolean('global') || false;
-
-            const avatarUrl = attachment ? attachment.url : url;
-
-            if (!avatarUrl) {
-                return interaction.reply({ content: "Veuillez fournir une image via pièce jointe ou un lien URL.", ephemeral: true });
-            }
-
-            await interaction.deferReply({ ephemeral: true });
-
-            try {
-                if (global) {
-                    await interaction.client.user.setAvatar(avatarUrl);
-                    await interaction.editReply({ content: "L'avatar global du bot a été mis à jour partout !" });
-                } else {
-                    await interaction.guild.members.me.setAvatar(avatarUrl);
-                    await interaction.editReply({ content: "L'avatar du bot a été mis à jour pour ce serveur !" });
-                }
-            } catch (error) {
-                console.error(error);
-                if (error.code === 50035) {
-                    await interaction.editReply({ content: "Erreur : Format d'image invalide ou lien incorrect." });
-                } else if (error.code === 50001) {
-                    await interaction.editReply({ content: "Erreur : Le bot n'a pas la permission de changer son avatar (vérifiez les permissions)." });
-                } else {
-                    await interaction.editReply({ content: "Une erreur est survenue lors de la mise à jour de l'avatar. (Note: Le serveur doit avoir un niveau de Boost suffisant pour les avatars personnalisés)" });
-                }
-            }
-        } else if (subcommand === 'set') {
-            if (interaction.user.id !== config.OWNER_ID) {
-                return interaction.reply({ content: "Vous n'êtes pas autorisé à utiliser cette commande.", ephemeral: true });
-            }
-
-            const targetUser = interaction.options.getUser('utilisateur');
-            const value = interaction.options.getInteger('value');
-
-            const { updateBaseQi } = require('../database');
-            const newQi = updateBaseQi(targetUser.id, value);
-
-            await interaction.reply({ content: `Le QI de <@${targetUser.id}> a été modifié de **${value}**. Nouveau QI de base : **${newQi}**.`, ephemeral: true });
-
-            // Update user's VC if they are in one
-            let vc = interaction.guild.members.cache.get(targetUser.id)?.voice?.channel;
-            if (vc) {
-                const { updateChannelStatus } = require('../utils/statusUpdater');
-                updateChannelStatus(vc);
-            }
         }
     }
 };
