@@ -48,5 +48,30 @@ module.exports = {
         } else {
             await targetChannel.send({ embeds: [embedBuilder] });
         }
+
+        // --- Update old Roll Embeds ---
+        const rollMsg = messages.find(m => m.author.id === client.user.id && m.embeds.length > 0 && m.embeds[0].title && m.embeds[0].title.includes('🎲 Tirages -'));
+
+        if (rollMsg) {
+            const now = new Date();
+            const nowTime = now.getTime();
+            const PARIS_OFFSET = 1 * 60 * 60 * 1000;
+            const nowParis = new Date(nowTime + PARIS_OFFSET);
+            const day = nowParis.getUTCDate();
+            const month = nowParis.getUTCMonth();
+            const year = nowParis.getUTCFullYear();
+            let endDay = (day % 2 === 1) ? day + 2 : day + 1;
+            const cycleEnd = Date.UTC(year, month, endDay, 0, 0, 0) - PARIS_OFFSET;
+            const cycleStart = cycleEnd - (48 * 60 * 60 * 1000);
+
+            if (rollMsg.createdTimestamp < cycleStart) {
+                const dailyTitle = `🎲 Tirages - Fin <t:${Math.floor(cycleEnd / 1000)}:R>`;
+                const resetEmbed = EmbedBuilder.from(rollMsg.embeds[0])
+                    .setTitle(dailyTitle)
+                    .setDescription("Aucun tirage pour ce cycle.")
+                    .setColor(0x0099FF);
+                await rollMsg.edit({ embeds: [resetEmbed] }).catch(() => null);
+            }
+        }
     }
 };

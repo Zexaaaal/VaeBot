@@ -21,7 +21,9 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
             cd ${{ secrets.REMOTE_PATH }}
-            git pull origin master
+            git fetch origin master
+            git reset --hard origin/master
             npm install
             npm run deploy
             pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot
+            pm2 save

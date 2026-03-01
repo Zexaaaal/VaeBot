@@ -148,22 +148,18 @@ module.exports = {
                     const messages = await channel.messages.fetch({ limit: 50 });
 
                     // Find existing roll embed
-                    let dailyMsg = messages.find(m => m.author.id === interaction.client.user.id && m.embeds.length > 0 && m.embeds[0].title && m.embeds[0].title.startsWith('🎲 Tirages -'));
-
-                    // Check if existing embed is from a previous cycle
-                    if (dailyMsg) {
-                        const msgTimestamp = dailyMsg.createdTimestamp;
-                        if (msgTimestamp < cycleStart) {
-                            await dailyMsg.delete().catch(() => null);
-                            dailyMsg = null;
-                        }
-                    }
+                    let dailyMsg = messages.find(m => m.author.id === interaction.client.user.id && m.embeds.length > 0 && m.embeds[0].title && m.embeds[0].title.includes('🎲 Tirages -'));
 
                     const dailyTitle = `🎲 Tirages - Fin <t:${Math.floor(cycleEnd / 1000)}:R>`;
 
                     if (dailyMsg) {
+                        const msgTimestamp = dailyMsg.createdTimestamp;
+                        const isOldCycle = (msgTimestamp < cycleStart);
+                        const isEmpty = dailyMsg.embeds[0].description === "Aucun tirage pour ce cycle.";
+
                         const oldEmbed = dailyMsg.embeds[0];
-                        const newDesc = oldEmbed.description + '\n' + rollLine;
+                        const newDesc = (isOldCycle || isEmpty) ? rollLine : (oldEmbed.description + '\n' + rollLine);
+
                         const newEmbed = EmbedBuilder.from(oldEmbed)
                             .setTitle(dailyTitle)
                             .setDescription(newDesc);
