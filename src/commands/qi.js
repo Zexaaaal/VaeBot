@@ -146,11 +146,10 @@ module.exports = {
                     const dailyTitle = `🎲 Tirages - Fin <t:${Math.floor(cycleEnd / 1000)}:R>`;
 
                     if (dailyMsg) {
-                        const msgTimestamp = dailyMsg.createdTimestamp;
-                        const isOldCycle = (msgTimestamp < cycleStart);
-                        const isEmpty = dailyMsg.embeds[0].description === "Aucun tirage pour ce cycle.";
-
                         const oldEmbed = dailyMsg.embeds[0];
+                        const isOldCycle = oldEmbed.title !== dailyTitle;
+                        const isEmpty = oldEmbed.description === "Aucun tirage pour ce cycle.";
+
                         const newDesc = (isOldCycle || isEmpty) ? rollLine : (oldEmbed.description + '\n' + rollLine);
 
                         const newEmbed = EmbedBuilder.from(oldEmbed)

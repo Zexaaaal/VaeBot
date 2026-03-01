@@ -19,18 +19,19 @@ if (!process.env.DISCORD_TOKEN) {
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
+const config = require('./config');
+
 (async () => {
     try {
         console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
         let route = Routes.applicationCommands(process.env.DISCORD_CLIENT_ID);
-        // Clear global commands first to prevent duplicates
-        console.log("Clearing Global Commands to avoid duplicates...");
+        console.log("Clearing Global Commands to avoid cross-server pollution...");
         await rest.put(route, { body: [] });
 
-        if (process.env.DISCORD_GUILD_ID) {
-            console.log("Using Guild Commands deployment...");
-            const guildRoute = Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, process.env.DISCORD_GUILD_ID);
+        if (config.ALLOWED_GUILD_ID) {
+            console.log(`Using Guild Commands deployment for guild: ${config.ALLOWED_GUILD_ID}`);
+            const guildRoute = Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID, config.ALLOWED_GUILD_ID);
             const data = await rest.put(guildRoute, { body: commands });
             console.log(`Successfully reloaded ${data.length} application (/) commands.`);
         } else {
