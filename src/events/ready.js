@@ -24,7 +24,7 @@ module.exports = {
         });
 
         // Try to find if we already posted rules
-        const messages = await targetChannel.messages.fetch({ limit: 10 });
+        const messages = await targetChannel.messages.fetch({ limit: 50 });
         const botMessages = messages.filter(m => m.author.id === client.user.id);
 
         let rulesEmbedMsg = null;
