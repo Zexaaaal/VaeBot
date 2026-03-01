@@ -104,22 +104,16 @@ module.exports = {
             const userId = interaction.user.id;
             const user = getUserInfo(userId);
 
-            // Robust calculation aligned with Paris time (UTC+1)
             const now = new Date();
             const nowTime = now.getTime();
             const PARIS_OFFSET = 1 * 60 * 60 * 1000;
-            const nowParis = new Date(nowTime + PARIS_OFFSET);
 
-            const day = nowParis.getUTCDate();
-            const month = nowParis.getUTCMonth();
-            const year = nowParis.getUTCFullYear();
+            const REFERENCE_DATE = Date.UTC(2024, 0, 1, 0, 0, 0) - PARIS_OFFSET;
+            const cycleDuration = 48 * 60 * 60 * 1000;
 
-            // Cycles: 1-2 (ends on 3rd), 3-4 (ends on 5th), etc.
-            let endDay = (day % 2 === 1) ? day + 2 : day + 1;
-
-            // cycleEnd in UTC is (endDay at 00:00 Paris) - Offset
-            const cycleEnd = Date.UTC(year, month, endDay, 0, 0, 0) - PARIS_OFFSET;
-            const cycleStart = cycleEnd - (48 * 60 * 60 * 1000);
+            const elapsed = nowTime - REFERENCE_DATE;
+            const cycleStart = Math.floor(elapsed / cycleDuration) * cycleDuration + REFERENCE_DATE;
+            const cycleEnd = cycleStart + cycleDuration;
 
             if (user.last_roll_date) {
                 const lastRoll = new Date(user.last_roll_date).getTime();
@@ -147,7 +141,6 @@ module.exports = {
                 if (channel) {
                     const messages = await channel.messages.fetch({ limit: 50 });
 
-                    // Find existing roll embed
                     let dailyMsg = messages.find(m => m.author.id === interaction.client.user.id && m.embeds.length > 0 && m.embeds[0].title && m.embeds[0].title.includes('🎲 Tirages -'));
 
                     const dailyTitle = `🎲 Tirages - Fin <t:${Math.floor(cycleEnd / 1000)}:R>`;
@@ -176,7 +169,6 @@ module.exports = {
 
             let vc = interaction.member?.voice?.channel;
             if (!vc) {
-                // Try to find the user in any voice channel
                 for (const channel of interaction.guild.channels.cache.values()) {
                     if (channel.isVoiceBased() && channel.members.has(userId)) {
                         vc = channel;
@@ -196,7 +188,7 @@ module.exports = {
                 const member = interaction.guild.members.cache.get(u.id);
                 if (!member || member.user.bot) continue;
                 const qi = calculateTotalQi(u.id);
-                if (qi === 0) continue; // Exclude users with no fluctuations (exactly 0)
+                if (qi === 0) continue;
                 const losses = getLast7DaysLosses(u.id);
                 rows.push({ name: member.displayName, qi, losses });
             }

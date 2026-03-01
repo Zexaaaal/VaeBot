@@ -18,10 +18,8 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// Initialize DB
 initDb();
 
-// Load Events
 const eventsPath = path.join(__dirname, 'events');
 if (!fs.existsSync(eventsPath)) fs.mkdirSync(eventsPath);
 
@@ -36,7 +34,6 @@ for (const file of eventFiles) {
     }
 }
 
-// Load Commands
 const commandsPath = path.join(__dirname, 'commands');
 if (!fs.existsSync(commandsPath)) fs.mkdirSync(commandsPath);
 
@@ -49,7 +46,6 @@ for (const file of commandFiles) {
     }
 }
 
-// Log in to Discord
 if (!process.env.DISCORD_TOKEN) {
     console.error("DISCORD_TOKEN is missing in .env file. Please provide it, otherwise the bot cannot start.");
 } else {

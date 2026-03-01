@@ -3,7 +3,6 @@ const path = require('path');
 
 const fs = require('fs');
 
-// Use Render's persistent disk if available, otherwise local
 const dataDir = fs.existsSync('/data') ? '/data' : path.resolve(__dirname, '..');
 const dbPath = path.join(dataDir, 'data.sqlite');
 const db = new Database(dbPath, { verbose: console.log });
@@ -58,7 +57,6 @@ function addModification(userId, value, reason, expiresAt = null) {
 
 function getActiveModifications(userId) {
     const now = new Date().toISOString();
-    // Get modifications that haven't expired OR have no expiration date (permanent like vote results? Actually vote results might be permanent base_qi change or permanent modification. The prompt says "sauvegardé". "Je quitte, je reviens, 50". Let's make votes change the \`base_qi\` directly, while daily rolls create a temporary modification.)
     return db.prepare('SELECT * FROM modifications WHERE user_id = ? AND (expires_at IS NULL OR expires_at > ?)').all(userId, now);
 }
 

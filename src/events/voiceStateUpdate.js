@@ -7,7 +7,6 @@ module.exports = {
     once: false,
     async execute(oldState, newState) {
         if (!newState.member.user.bot) {
-            // Accessing DB ensures user gets created if they join
             getUserInfo(newState.id);
         }
 

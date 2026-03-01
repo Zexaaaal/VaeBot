@@ -3,7 +3,6 @@ const config = require('../config');
 const { updateBaseQi, calculateTotalQi } = require('../database');
 const { updateChannelStatus } = require('../utils/statusUpdater');
 
-// Temporary in-memory store for vote configurations
 const voteConfigs = new Map();
 
 module.exports = {
@@ -28,9 +27,6 @@ module.exports = {
 
             let configT = voteConfigs.get(user.id) || {};
 
-            // Need to reply to select menus to not show "Interaction failed"
-            // Wait we used interaction.reply for the initial menu. Replying ephemeral "Choix enregistré" is good.
-            // But if user clicks multiple times, we need to handle it. interaction.deferUpdate() is better.
             if (customId === 'vote_select_user') {
                 configT.targetId = values[0];
             } else if (customId === 'vote_select_malus') {
@@ -43,7 +39,6 @@ module.exports = {
 
             voteConfigs.set(user.id, configT);
             await interaction.reply({ content: "Enregistré ✅", ephemeral: true });
-            // Delete the reply after 2 seconds to keep it clean
             setTimeout(() => interaction.deleteReply().catch(() => null), 2000);
 
         } else if (interaction.isButton()) {
@@ -59,7 +54,6 @@ module.exports = {
                 const targetMember = await interaction.guild.members.fetch(userConfig.targetId);
                 const displayName = targetMember ? targetMember.displayName : (await client.users.fetch(userConfig.targetId)).username;
 
-                // Sum up points
                 let totalPoints = 0;
                 let reasons = [];
                 if (userConfig.malus) {
@@ -87,7 +81,6 @@ module.exports = {
                 await interaction.reply({ content: "Le vote est lancé", ephemeral: true });
                 setTimeout(() => interaction.deleteReply().catch(() => null), 3000);
 
-                // Wait for interactions (2 minutes = 120000 ms)
                 const filter = i => {
                     if (i.user.bot) return false;
                     const member = interaction.guild.members.cache.get(i.user.id);
@@ -111,7 +104,6 @@ module.exports = {
                 });
 
                 collector.on('end', async () => {
-                    // Remove buttons after vote
                     await replyMessage.edit({ components: [] }).catch(() => null);
 
                     if (yesVotes > noVotes) {
@@ -125,7 +117,6 @@ module.exports = {
 
                         await replyMessage.edit({ embeds: [resultEmbed] });
 
-                        // Update VC status
                         let vc = targetMember?.voice?.channel;
                         if (!vc) {
                             for (const channel of interaction.guild.channels.cache.values()) {
@@ -147,7 +138,6 @@ module.exports = {
                     }
                 });
 
-                // clear config
                 voteConfigs.delete(interaction.user.id);
             }
         }

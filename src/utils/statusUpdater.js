@@ -1,7 +1,7 @@
 const { calculateTotalQi } = require('../database');
 
 async function updateChannelStatus(channel) {
-    if (!channel || channel.type !== 2) return; // 2 is GUILD_VOICE
+    if (!channel || channel.type !== 2) return;
 
     const members = channel.members.filter(m => !m.user.bot);
     if (members.size === 0) {
@@ -23,7 +23,7 @@ async function updateChannelStatus(channel) {
     }
     const avgQi = Math.round(totalQi / members.size);
 
-    const statusText = `Moyenne QI: ${avgQi} 🧠`;
+    const statusText = `Moyenne QI: ${avgQi}`;
 
     try {
         await channel.client.rest.put(
