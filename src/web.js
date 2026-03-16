@@ -2,7 +2,6 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const path = require('path');
 const { getOscarsCategories, getOscarsNominees, addOscarsVote, hasVoted } = require('./database');
-const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
