@@ -132,7 +132,7 @@ function getOscarsCategories() {
 }
 
 function getOscarsNominees(categoryId) {
-    return db.prepare('SELECT * FROM oscars_nominees WHERE category_id = ?').all();
+    return db.prepare('SELECT * FROM oscars_nominees WHERE category_id = ?').all(categoryId);
 }
 
 function addOscarsVote(categoryId, cookieId, nomineeId) {
