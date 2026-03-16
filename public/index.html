@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oscars Voting</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-overlay"></div>
+    <div class="container">
+        <header>
+            <h1 class="oscars-title">THE OSCARS</h1>
+            <div class="divider"></div>
+        </header>
+
+        <main id="app">
+            <div id="loading" class="fade-in">Chargement des catégories...</div>
+            
+            <div id="voting-section" class="hidden fade-in">
+                <h2 id="category-name">Nom de la Catégorie</h2>
+                <div id="nominees-list" class="nominees-grid">
+                    <!-- Nominees will be injected here -->
+                </div>
+                <div id="message" class="message"></div>
+            </div>
+
+            <div id="finished-section" class="hidden fade-in">
+                <h2>Merci pour vos votes !</h2>
+                <p>Les gagnants seront bientôt révélés sur Discord.</p>
+            </div>
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

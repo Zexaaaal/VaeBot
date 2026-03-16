@@ -27,6 +27,37 @@ function initDb() {
       FOREIGN KEY (user_id) REFERENCES users (id)
     );
   `);
+
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS oscars_categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      is_active INTEGER DEFAULT 1,
+      is_revealed INTEGER DEFAULT 0
+    );
+  `);
+
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS oscars_nominees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category_id INTEGER,
+      name TEXT NOT NULL,
+      discord_id TEXT,
+      FOREIGN KEY (category_id) REFERENCES oscars_categories (id)
+    );
+  `);
+
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS oscars_votes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category_id INTEGER,
+      voter_cookie_id TEXT,
+      nominee_id INTEGER,
+      FOREIGN KEY (category_id) REFERENCES oscars_categories (id),
+      FOREIGN KEY (nominee_id) REFERENCES oscars_nominees (id),
+      UNIQUE(category_id, voter_cookie_id)
+    );
+  `);
 }
 
 function getUserInfo(userId) {
@@ -96,6 +127,34 @@ function getFirstRollTimestamp() {
     return result?.first_roll || null;
 }
 
+function getOscarsCategories() {
+    return db.prepare('SELECT * FROM oscars_categories WHERE is_active = 1').all();
+}
+
+function getOscarsNominees(categoryId) {
+    return db.prepare('SELECT * FROM oscars_nominees WHERE category_id = ?').all();
+}
+
+function addOscarsVote(categoryId, cookieId, nomineeId) {
+    return db.prepare('INSERT OR REPLACE INTO oscars_votes (category_id, voter_cookie_id, nominee_id) VALUES (?, ?, ?)').run(categoryId, cookieId, nomineeId);
+}
+
+function hasVoted(categoryId, cookieId) {
+    const vote = db.prepare('SELECT id FROM oscars_votes WHERE category_id = ? AND voter_cookie_id = ?').get(categoryId, cookieId);
+    return !!vote;
+}
+
+function getOscarsResults(categoryId) {
+    return db.prepare(`
+        SELECT n.id, n.name, n.discord_id, COUNT(v.id) as vote_count
+        FROM oscars_nominees n
+        LEFT JOIN oscars_votes v ON n.id = v.nominee_id
+        WHERE n.category_id = ?
+        GROUP BY n.id
+        ORDER BY vote_count DESC
+    `).all(categoryId);
+}
+
 module.exports = {
     db,
     initDb,
@@ -109,5 +168,10 @@ module.exports = {
     calculateTotalQi,
     getAllUsers,
     getLast7DaysLosses,
-    getFirstRollTimestamp
+    getFirstRollTimestamp,
+    getOscarsCategories,
+    getOscarsNominees,
+    addOscarsVote,
+    hasVoted,
+    getOscarsResults
 };

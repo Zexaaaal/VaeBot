@@ -3,6 +3,7 @@ const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js'
 const fs = require('fs');
 const path = require('path');
 const { initDb } = require('./database');
+const { startWebServer } = require('./web');
 
 const client = new Client({
     intents: [
@@ -19,6 +20,7 @@ const client = new Client({
 client.commands = new Collection();
 
 initDb();
+startWebServer();
 
 const eventsPath = path.join(__dirname, 'events');
 if (!fs.existsSync(eventsPath)) fs.mkdirSync(eventsPath);
