@@ -11,7 +11,7 @@ async function createPodiumImage(results, client) {
 
     // Load background image (optional, we could use a gradient or the oscar bg)
     try {
-        const bgPath = path.join(__dirname, '../../oscarsbg.png');
+        const bgPath = path.join(__dirname, '../../public/oscarsbg.png');
         const bg = await loadImage(bgPath);
         ctx.globalAlpha = 0.3;
         ctx.drawImage(bg, 0, 0, 800, 400);
