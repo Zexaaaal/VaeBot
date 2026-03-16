@@ -48,8 +48,8 @@ app.post('/api/vote', (req, res) => {
 });
 
 function startWebServer() {
-    app.listen(PORT, () => {
-        console.log(`Web server running on http://localhost:${PORT}`);
+    app.listen(PORT, '::', () => {
+        console.log(`Web server running on port ${PORT} (IPv6/IPv4)`);
     });
 }
 
