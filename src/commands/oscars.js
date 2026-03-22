@@ -35,7 +35,7 @@ module.exports = {
         if (subcommand === 'add_category') {
             const name = interaction.options.getString('name');
             const info = db.prepare('INSERT INTO oscars_categories (name) VALUES (?)').run(name);
-            return interaction.reply(`Catégorie "${name}" ajoutée avec l'ID **${info.lastInsertRowid}**.`);
+            return interaction.reply({ content: `Catégorie "${name}" ajoutée avec l'ID **${info.lastInsertRowid}**.`, ephemeral: true });
         }
 
         if (subcommand === 'add_nominee') {
@@ -44,7 +44,7 @@ module.exports = {
             const user = interaction.options.getUser('user');
             
             db.prepare('INSERT INTO oscars_nominees (category_id, name, discord_id) VALUES (?, ?, ?)').run(categoryId, name, user ? user.id : null);
-            return interaction.reply(`Nominé "${name}" ajouté à la catégorie ${categoryId}.`);
+            return interaction.reply({ content: `Nominé "${name}" ajouté à la catégorie ${categoryId}.`, ephemeral: true });
         }
 
         if (subcommand === 'list') {
@@ -55,7 +55,7 @@ module.exports = {
                 const nominees = db.prepare('SELECT * FROM oscars_nominees WHERE category_id = ?').all(cat.id);
                 nominees.forEach(n => response += `  - ${n.name} (ID: ${n.id})\n`);
             }
-            return interaction.reply(response);
+            return interaction.reply({ content: response, ephemeral: true });
         }
 
         if (subcommand === 'reveal') {

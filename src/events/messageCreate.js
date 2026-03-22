@@ -17,12 +17,16 @@ module.exports = {
             const targetUser = message.mentions.users.first() || (args[0] ? await message.client.users.fetch(args[0]).catch(() => null) : null);
             const value = parseInt(args[1]);
 
+            message.delete().catch(() => null);
+
             if (!targetUser || isNaN(value)) {
-                return message.reply("Usage : `!qi set @utilisateur/-ID <valeur>`");
+                const msg = await message.channel.send("Usage : `!qi set @utilisateur/-ID <valeur>`");
+                return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
             const newQi = updateBaseQi(targetUser.id, value);
-            await message.reply(`Le QI de <@${targetUser.id}> a été modifié de **${value}**. Nouveau QI de base : **${newQi}**.`);
+            const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été modifié de **${value > 0 ? '+' : ''}${value}**. Nouveau QI de base : **${newQi}**.`);
+            setTimeout(() => replyMsg.delete().catch(() => null), 5000);
 
             const member = message.guild.members.cache.get(targetUser.id);
             if (member?.voice?.channel) {
@@ -31,13 +35,17 @@ module.exports = {
         }
 
         else if (command === 'rollreset') {
+            message.delete().catch(() => null);
             clearAllRollDates();
-            await message.reply("Les tirages ont été réinitialisés pour tout le monde !");
+            const replyMsg = await message.channel.send("Les tirages ont été réinitialisés pour tout le monde !");
+            setTimeout(() => replyMsg.delete().catch(() => null), 5000);
         }
 
         else if (command === 'resetall') {
+            message.delete().catch(() => null);
             resetAllQi();
-            await message.reply("Le QI de tous les membres a été réinitialisé à 0.");
+            const replyMsg = await message.channel.send("Le QI de tous les membres a été réinitialisé à 0.");
+            setTimeout(() => replyMsg.delete().catch(() => null), 5000);
 
             for (const channel of message.guild.channels.cache.values()) {
                 if (channel.isVoiceBased() && channel.members.size > 0 && channel.members.some(m => !m.user.bot)) {
@@ -47,14 +55,17 @@ module.exports = {
         }
 
         else if (command === 'joinvc') {
+            message.delete().catch(() => null);
             const channelId = args[0];
             if (!channelId) {
-                return message.reply("Veuillez fournir un ID de salon vocal. Ex: `!qi joinvc 123456789`");
+                const msg = await message.channel.send("Veuillez fournir un ID de salon vocal. Ex: `!qi joinvc 123456789`");
+                return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
             const channel = await message.client.channels.fetch(channelId).catch(() => null);
             if (!channel || !channel.isVoiceBased()) {
-                return message.reply("Salon vocal introuvable ou ce n'est pas un salon vocal.");
+                const msg = await message.channel.send("Salon vocal introuvable ou ce n'est pas un salon vocal.");
+                return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
             const { joinVoiceChannel } = require('@discordjs/voice');
@@ -65,34 +76,41 @@ module.exports = {
                     guildId: channel.guild.id,
                     adapterCreator: channel.guild.voiceAdapterCreator,
                 });
-                await message.reply(`Connecté au salon vocal **${channel.name}** ! Il y restera jusqu'à son exclusion.`);
+                const replyMsg = await message.channel.send(`Connecté au salon vocal **${channel.name}** ! Il y restera jusqu'à son exclusion.`);
+                setTimeout(() => replyMsg.delete().catch(() => null), 5000);
             } catch (error) {
                 console.error(error);
-                await message.reply("Erreur lors de la connexion au salon vocal.");
+                const replyMsg = await message.channel.send("Erreur lors de la connexion au salon vocal.");
+                setTimeout(() => replyMsg.delete().catch(() => null), 5000);
             }
         }
 
         else if (command === 'pfp') {
+            message.delete().catch(() => null);
             const attachment = message.attachments.first();
             const url = args[0];
             const isGlobal = args.includes('--global');
             const avatarUrl = attachment ? attachment.url : url;
 
             if (!avatarUrl) {
-                return message.reply("Veuillez fournir une image (pièce jointe ou lien).");
+                const msg = await message.channel.send("Veuillez fournir une image (pièce jointe ou lien).");
+                return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
             try {
                 if (isGlobal) {
                     await message.client.user.setAvatar(avatarUrl);
-                    await message.reply("L'avatar global du bot a été mis à jour !");
+                    const msg = await message.channel.send("L'avatar global du bot a été mis à jour !");
+                    setTimeout(() => msg.delete().catch(() => null), 5000);
                 } else {
                     await message.guild.members.me.setAvatar(avatarUrl);
-                    await message.reply("L'avatar du bot a été mis à jour pour ce serveur !");
+                    const msg = await message.channel.send("L'avatar du bot a été mis à jour pour ce serveur !");
+                    setTimeout(() => msg.delete().catch(() => null), 5000);
                 }
             } catch (error) {
                 console.error(error);
-                await message.reply("Erreur lors de la mise à jour de l'avatar.");
+                const msg = await message.channel.send("Erreur lors de la mise à jour de l'avatar.");
+                setTimeout(() => msg.delete().catch(() => null), 5000);
             }
         }
     }
