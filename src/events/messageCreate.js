@@ -46,6 +46,32 @@ module.exports = {
             }
         }
 
+        else if (command === 'joinvc') {
+            const channelId = args[0];
+            if (!channelId) {
+                return message.reply("Veuillez fournir un ID de salon vocal. Ex: `!qi joinvc 123456789`");
+            }
+
+            const channel = await message.client.channels.fetch(channelId).catch(() => null);
+            if (!channel || !channel.isVoiceBased()) {
+                return message.reply("Salon vocal introuvable ou ce n'est pas un salon vocal.");
+            }
+
+            const { joinVoiceChannel } = require('@discordjs/voice');
+
+            try {
+                joinVoiceChannel({
+                    channelId: channel.id,
+                    guildId: channel.guild.id,
+                    adapterCreator: channel.guild.voiceAdapterCreator,
+                });
+                await message.reply(`Connecté au salon vocal **${channel.name}** ! Il y restera jusqu'à son exclusion.`);
+            } catch (error) {
+                console.error(error);
+                await message.reply("Erreur lors de la connexion au salon vocal.");
+            }
+        }
+
         else if (command === 'pfp') {
             const attachment = message.attachments.first();
             const url = args[0];
