@@ -13,31 +13,23 @@ module.exports = {
         const args = message.content.slice(3).trim().split(/ +/);
         const command = args.shift()?.toLowerCase();
 
-        if (command === 'add' || command === 'set') {
+        if (command === 'set') {
             const targetUser = message.mentions.users.first() || (args[0] ? await message.client.users.fetch(args[0]).catch(() => null) : null);
             const value = parseInt(args[1]);
 
             message.delete().catch(() => null);
 
             if (!targetUser || isNaN(value)) {
-                const msg = await message.channel.send(`Usage : \`!qi ${command} @utilisateur/-ID <valeur>\``);
+                const msg = await message.channel.send(`Usage : \`!qi set @utilisateur/-ID <valeur>\``);
                 return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
-            let newTotalQi;
-            if (command === 'add') {
-                updateBaseQi(targetUser.id, value);
-                newTotalQi = calculateTotalQi(targetUser.id);
-                const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été modifié de **${value > 0 ? '+' : ''}${value}**. Nouveau QI Total : **${newTotalQi}**.`);
-                setTimeout(() => replyMsg.delete().catch(() => null), 5000);
-            } else {
-                const currentTotal = calculateTotalQi(targetUser.id);
-                const diff = value - currentTotal;
-                updateBaseQi(targetUser.id, diff);
-                newTotalQi = value;
-                const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été forcé à **${value}** (total actuel).`);
-                setTimeout(() => replyMsg.delete().catch(() => null), 5000);
-            }
+            // Le but souhaité de "set" par l'utilisateur est d'AJOUTER ou SOUSTRAIRE à la base :
+            updateBaseQi(targetUser.id, value);
+            const newTotalQi = calculateTotalQi(targetUser.id);
+            
+            const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été modifié de **${value > 0 ? '+' : ''}${value}**. Nouveau QI Total : **${newTotalQi}**.`);
+            setTimeout(() => replyMsg.delete().catch(() => null), 5000);
 
             const member = message.guild.members.cache.get(targetUser.id);
             if (member?.voice?.channel) {
