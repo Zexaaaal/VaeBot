@@ -55,6 +55,10 @@ module.exports = {
                 const nominees = db.prepare('SELECT * FROM oscars_nominees WHERE category_id = ?').all(cat.id);
                 nominees.forEach(n => response += `  - ${n.name} (ID: ${n.id})\n`);
             }
+            // Cut to respect 2000 max discord char limit per message 
+            if (response.length > 1999) {
+                response = response.substring(0, 1990) + '...';
+            }
             return interaction.reply({ content: response, ephemeral: true });
         }
 
