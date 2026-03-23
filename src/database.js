@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const dataDir = fs.existsSync('/data') ? '/data' : path.resolve(__dirname, '..');
 const dbPath = path.join(dataDir, 'data.sqlite');
-const db = new Database(dbPath, { verbose: console.log });
+const db = new Database(dbPath);
 
 function initDb() {
     db.exec(`
