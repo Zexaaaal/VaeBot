@@ -1,6 +1,6 @@
 const { Events } = require('discord.js');
 const config = require('../config');
-const { clearAllRollDates, resetAllQi, updateBaseQi } = require('../database');
+const { clearAllRollDates, resetAllQi, updateBaseQi, setBaseQi, calculateTotalQi } = require('../database');
 const { updateChannelStatus } = require('../utils/statusUpdater');
 
 module.exports = {
@@ -13,20 +13,31 @@ module.exports = {
         const args = message.content.slice(3).trim().split(/ +/);
         const command = args.shift()?.toLowerCase();
 
-        if (command === 'set') {
+        if (command === 'add' || command === 'set') {
             const targetUser = message.mentions.users.first() || (args[0] ? await message.client.users.fetch(args[0]).catch(() => null) : null);
             const value = parseInt(args[1]);
 
             message.delete().catch(() => null);
 
             if (!targetUser || isNaN(value)) {
-                const msg = await message.channel.send("Usage : `!qi set @utilisateur/-ID <valeur>`");
+                const msg = await message.channel.send(`Usage : \`!qi ${command} @utilisateur/-ID <valeur>\``);
                 return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
-            const newQi = updateBaseQi(targetUser.id, value);
-            const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été modifié de **${value > 0 ? '+' : ''}${value}**. Nouveau QI de base : **${newQi}**.`);
-            setTimeout(() => replyMsg.delete().catch(() => null), 5000);
+            let newTotalQi;
+            if (command === 'add') {
+                updateBaseQi(targetUser.id, value);
+                newTotalQi = calculateTotalQi(targetUser.id);
+                const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été modifié de **${value > 0 ? '+' : ''}${value}**. Nouveau QI Total : **${newTotalQi}**.`);
+                setTimeout(() => replyMsg.delete().catch(() => null), 5000);
+            } else {
+                const currentTotal = calculateTotalQi(targetUser.id);
+                const diff = value - currentTotal;
+                updateBaseQi(targetUser.id, diff);
+                newTotalQi = value;
+                const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été forcé à **${value}** (total actuel).`);
+                setTimeout(() => replyMsg.delete().catch(() => null), 5000);
+            }
 
             const member = message.guild.members.cache.get(targetUser.id);
             if (member?.voice?.channel) {
@@ -68,15 +79,37 @@ module.exports = {
                 return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
-            const { joinVoiceChannel } = require('@discordjs/voice');
+            const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
+            const path = require('path');
 
             try {
-                joinVoiceChannel({
+                const connection = joinVoiceChannel({
                     channelId: channel.id,
                     guildId: channel.guild.id,
                     adapterCreator: channel.guild.voiceAdapterCreator,
                 });
-                const replyMsg = await message.channel.send(`Connecté au salon vocal **${channel.name}** ! Il y restera jusqu'à son exclusion.`);
+
+                const player = createAudioPlayer();
+                connection.subscribe(player);
+
+                const playVenboom = () => {
+                    const audioPath = path.join(__dirname, '../../venboom.mp3');
+                    const resource = createAudioResource(audioPath);
+                    player.play(resource);
+                };
+
+                playVenboom();
+
+                player.on(AudioPlayerStatus.Idle, () => {
+                    playVenboom();
+                });
+
+                player.on('error', error => {
+                    console.error('AudioPlayer Error:', error);
+                    playVenboom();
+                });
+
+                const replyMsg = await message.channel.send(`Connecté au salon vocal **${channel.name}** ! Il y restera indéfiniment sans se déconnecter.`);
                 setTimeout(() => replyMsg.delete().catch(() => null), 5000);
             } catch (error) {
                 console.error(error);

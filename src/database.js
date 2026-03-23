@@ -98,6 +98,12 @@ function updateBaseQi(userId, amount) {
     return newQi;
 }
 
+function setBaseQi(userId, targetQi) {
+    getUserInfo(userId); // ensure exists
+    db.prepare('UPDATE users SET base_qi = ? WHERE id = ?').run(targetQi, userId);
+    return targetQi;
+}
+
 function calculateTotalQi(userId) {
     const user = getUserInfo(userId);
     const mods = getActiveModifications(userId);
@@ -165,6 +171,7 @@ module.exports = {
     addModification,
     getActiveModifications,
     updateBaseQi,
+    setBaseQi,
     calculateTotalQi,
     getAllUsers,
     getLast7DaysLosses,

@@ -23,7 +23,7 @@ async function updateChannelStatus(channel) {
     }
     const avgQi = Math.round(totalQi / members.size);
 
-    const statusText = `Moyenne QI: ${avgQi}`;
+    const statusText = `QI: ${avgQi}`;
 
     try {
         await channel.client.rest.put(
