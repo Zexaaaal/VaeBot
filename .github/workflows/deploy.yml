@@ -25,7 +25,7 @@ jobs:
           fi
           sshpass -e rsync -avz -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }}" --exclude='.git' ./ ${{ secrets.SSH_USER }}@$HOST:${{ secrets.REMOTE_PATH }}/
 
-      - name: Deploy via SSH
+      - name: Deploy SSH
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
         run: |
