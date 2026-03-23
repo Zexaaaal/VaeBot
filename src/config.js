@@ -10,6 +10,7 @@ module.exports = {
     { label: "Remarque stupide", value: "malus_remarque_stupide", points: -10 },
     { label: "Utilisation de l'IA pour une tâche simple", value: "malus_ia_simple", points: -15 },
     { label: "Histoire trop longue, monologue, yapping", value: "malus_yapping", points: -20 },
+    { label: "Quitte sans dire au revoir", value: "malus_quitte_sans_dire_au_revoir", points: -40 }
   ],
   BONUS_LIST: [
     { label: "Compliment", value: "bonus_compliment", points: 10 },
