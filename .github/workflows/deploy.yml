@@ -12,6 +12,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Copy files to VPS via SCP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          source: "."
+          target: ${{ secrets.REMOTE_PATH }}
+          rm: false
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -21,9 +32,6 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
             cd ${{ secrets.REMOTE_PATH }}
-            git fetch origin master
-            git reset --hard origin/master
-            npm install
-            npm run deploy
+            npm install --no-bin-links
             pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot
             pm2 save
