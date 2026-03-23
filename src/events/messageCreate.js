@@ -95,6 +95,7 @@ module.exports = {
                 connection.subscribe(player);
 
                 const playVenboom = () => {
+                    console.log('[AUDIO] Lancement de venboom.mp3');
                     const audioPath = path.join(__dirname, '../../venboom.mp3');
                     const resource = createAudioResource(audioPath);
                     player.play(resource);
@@ -103,12 +104,17 @@ module.exports = {
                 playVenboom();
 
                 player.on(AudioPlayerStatus.Idle, () => {
+                    console.log('[AUDIO] Fin du fichier, on relance en boucle...');
                     playVenboom();
                 });
 
+                player.on(AudioPlayerStatus.Playing, () => {
+                    console.log('[AUDIO] Le lecteur indique qu il est en train de LIRE le fichier');
+                });
+
                 player.on('error', error => {
-                    console.error('AudioPlayer Error:', error);
-                    playVenboom();
+                    console.error('[AUDIO ERROR] AudioPlayer Error:', error);
+                    setTimeout(playVenboom, 5000); // 5 sec pause if error
                 });
 
                 const replyMsg = await message.channel.send(`Connecté au salon vocal **${channel.name}** ! Il y restera indéfiniment sans se déconnecter.`);
