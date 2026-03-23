@@ -11,7 +11,7 @@ async function updateChannelStatus(channel) {
                 { body: { status: "" } }
             );
         } catch (e) {
-            console.error("Missing permissions to reset VC status", e.message);
+            // On ignore silencieusement pour ne pas spammer les logs si le bot n'a pas la permission
         }
         return;
     }
@@ -31,7 +31,7 @@ async function updateChannelStatus(channel) {
             { body: { status: statusText } }
         );
     } catch (e) {
-        console.error("Error setting channel status:", e.message);
+        // Ignorer silencieusement si pas la permission ("Connect" / "Manage Channels")
     }
 }
 

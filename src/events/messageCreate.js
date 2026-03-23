@@ -102,6 +102,14 @@ module.exports = {
                         }
                     });
 
+                    // DEBUGGING ULTIME !
+                    connection.on('debug', message => {
+                        console.log(`[RESEAU VOCAL DEBUG] ${message}`);
+                    });
+                    connection.on('error', error => {
+                        console.error(`[RESEAU VOCAL ERROR] ${error.message}`);
+                    });
+
                     const player = createAudioPlayer();
                     connection.subscribe(player);
 
