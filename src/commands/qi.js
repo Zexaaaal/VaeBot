@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 const config = require('../config');
-const { getUserInfo, calculateTotalQi, addModification, updateUserRollDate, getAllUsers, getLast7DaysLosses, getFirstRollTimestamp } = require('../database');
+const { getUserInfo, calculateTotalQi, addModification, updateUserRollDate, getAllUsers, getLast7DaysLosses, getFirstRollTimestamp, getGlobalState, setGlobalState } = require('../database');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -122,12 +122,68 @@ module.exports = {
                 }
             }
 
-            const randomEvent = config.DAILY_ROLL_EVENTS[Math.floor(Math.random() * config.DAILY_ROLL_EVENTS.length)];
+            let randomEvent = null;
+            let gaveRole = false;
+            const nowMs = now.getTime();
+            let expiresAt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59).toISOString();
 
-            const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+            const r = Math.random() * 100;
+            const specialRoleState = getGlobalState('special_role');
 
-            addModification(userId, randomEvent.points, `Roll: ${randomEvent.label}`, endOfDay.toISOString());
+            if (r < 0.001) {
+                randomEvent = { label: "Holà, SOY DORA!!!", points: 100 };
+            } else if (r < 0.051) {
+                let canGiveRole = false;
+                let oldRoleState = null;
+                if (!specialRoleState) {
+                    canGiveRole = true;
+                } else {
+                    const expirationMs = specialRoleState.assignedAt + 7 * 24 * 60 * 60 * 1000;
+                    if (nowMs >= expirationMs) {
+                        canGiveRole = true;
+                        oldRoleState = specialRoleState;
+                    }
+                }
+
+                if (canGiveRole) {
+                    if (oldRoleState && config.SPECIAL_ROLE_ID && config.SPECIAL_ROLE_ID !== "") {
+                        interaction.guild.members.fetch(oldRoleState.userId).then(oldMember => {
+                            if (oldMember) oldMember.roles.remove(config.SPECIAL_ROLE_ID).catch(console.error);
+                        }).catch(console.error);
+                    }
+
+                    randomEvent = { label: "DORÉE ! Rôle spécial (7 jours)", points: 50 };
+                    gaveRole = true;
+                    const roleExpirationDate = new Date(nowMs + 7 * 24 * 60 * 60 * 1000);
+                    expiresAt = roleExpirationDate.toISOString();
+                    setGlobalState('special_role', { userId: userId, assignedAt: nowMs, immuneUsed: false });
+                } else {
+                    randomEvent = config.DAILY_ROLL_EVENTS[Math.floor(Math.random() * config.DAILY_ROLL_EVENTS.length)];
+                }
+            } else {
+                randomEvent = config.DAILY_ROLL_EVENTS[Math.floor(Math.random() * config.DAILY_ROLL_EVENTS.length)];
+            }
+
+            if (randomEvent.points < 0 && !gaveRole) {
+                if (specialRoleState && specialRoleState.userId === userId && !specialRoleState.immuneUsed) {
+                    const expirationMs = specialRoleState.assignedAt + 7 * 24 * 60 * 60 * 1000;
+                    if (nowMs < expirationMs) {
+                        randomEvent = { label: `[Immunité] ~~${randomEvent.label}~~ neutre`, points: 0 };
+                        specialRoleState.immuneUsed = true;
+                        setGlobalState('special_role', specialRoleState);
+                    }
+                }
+            }
+
+            addModification(userId, randomEvent.points, `Roll: ${randomEvent.label}`, expiresAt);
             updateUserRollDate(userId, now.toISOString());
+
+            if (gaveRole && config.SPECIAL_ROLE_ID && config.SPECIAL_ROLE_ID !== "") {
+                const member = interaction.member;
+                if (member) {
+                    member.roles.add(config.SPECIAL_ROLE_ID).catch(console.error);
+                }
+            }
 
             const currentQi = calculateTotalQi(userId);
 

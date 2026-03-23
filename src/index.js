@@ -6,6 +6,7 @@ const fs = require('fs');
 const path = require('path');
 const { initDb } = require('./database');
 const { startWebServer } = require('./web');
+const { checkSpecialRoleExpiration } = require('./utils/roleManager');
 
 const client = new Client({
     intents: [
@@ -23,6 +24,11 @@ client.commands = new Collection();
 
 initDb();
 startWebServer();
+
+checkSpecialRoleExpiration(client);
+setInterval(() => {
+    checkSpecialRoleExpiration(client);
+}, 5 * 60 * 1000); // Check every 5 mins
 
 const eventsPath = path.join(__dirname, 'events');
 if (!fs.existsSync(eventsPath)) fs.mkdirSync(eventsPath);

@@ -58,6 +58,26 @@ function initDb() {
       UNIQUE(category_id, voter_cookie_id)
     );
   `);
+
+    db.exec(`
+    CREATE TABLE IF NOT EXISTS global_state (
+      key TEXT PRIMARY KEY,
+      value TEXT
+    );
+  `);
+}
+
+function getGlobalState(key) {
+    const row = db.prepare('SELECT value FROM global_state WHERE key = ?').get(key);
+    return row ? JSON.parse(row.value) : null;
+}
+
+function setGlobalState(key, value) {
+    db.prepare('INSERT OR REPLACE INTO global_state (key, value) VALUES (?, ?)').run(key, JSON.stringify(value));
+}
+
+function deleteGlobalState(key) {
+    db.prepare('DELETE FROM global_state WHERE key = ?').run(key);
 }
 
 function getUserInfo(userId) {
@@ -180,5 +200,8 @@ module.exports = {
     getOscarsNominees,
     addOscarsVote,
     hasVoted,
-    getOscarsResults
+    getOscarsResults,
+    getGlobalState,
+    setGlobalState,
+    deleteGlobalState
 };
