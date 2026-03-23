@@ -193,18 +193,20 @@ module.exports = {
             }
 
             rows.sort((a, b) => b.qi - a.qi);
+            const topRows = rows.slice(0, 30); // Prevent Discord 2000 char limit
 
             let table = '```\n';
             table += 'Pseudo'.padEnd(20) + 'QI'.padStart(6) + '  7j perdu'.padStart(10) + '\n';
             table += '─'.repeat(38) + '\n';
-            if (rows.length === 0) {
+            if (topRows.length === 0) {
                 table += 'Aucun utilisateur avec des points.\n';
             } else {
-                for (const row of rows) {
+                for (const row of topRows) {
                     const lossStr = row.losses < 0 ? `${row.losses}` : '0';
                     table += row.name.slice(0, 18).padEnd(20) + String(row.qi).padStart(6) + lossStr.padStart(10) + '\n';
                 }
             }
+            if (rows.length > 30) table += `\n... et ${rows.length - 30} autres membres`;
             table += '```';
 
             const embed = new EmbedBuilder()
