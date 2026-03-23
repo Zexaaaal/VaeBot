@@ -1,6 +1,18 @@
 require('dotenv').config();
 const dns = require('dns');
-dns.setDefaultResultOrder('ipv6first'); 
+// FORCAGE BRUTAL IPV6 - SOLUTION DE LA DERNIERE CHANCE
+const originalLookup = dns.lookup;
+dns.lookup = (hostname, options, callback) => {
+    if (typeof options === 'function') {
+        callback = options;
+        options = { family: 6 };
+    } else if (typeof options === 'number') {
+        options = { family: 6 };
+    } else {
+        options = Object.assign({}, options, { family: 6 });
+    }
+    return originalLookup(hostname, options, callback);
+};
 const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
