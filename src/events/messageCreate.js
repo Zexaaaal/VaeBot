@@ -101,6 +101,14 @@ module.exports = {
                     player.play(resource);
                 };
 
+                // Sondes sur l'état du réseau Discord (UDP/NAT)
+                connection.on('stateChange', (oldState, newState) => {
+                    console.log(`[RESEAU VOCAL] Changement d'etat: ${oldState.status} => ${newState.status}`);
+                    if (newState.status === 'disconnected') {
+                        console.error('[RESEAU VOCAL] Le bot a ete deconnecte par Discord !');
+                    }
+                });
+
                 playVenboom();
 
                 player.on(AudioPlayerStatus.Idle, () => {
