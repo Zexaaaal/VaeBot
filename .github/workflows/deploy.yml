@@ -12,26 +12,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Copy files to VPS via SCP
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          source: "."
-          target: ${{ secrets.REMOTE_PATH }}
-          rm: false
+      - name: Install tools
+        run: sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+      - name: Copy files to VPS via rsync
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          HOST="${{ secrets.SSH_HOST }}"
+          if [[ "$HOST" == *":"* ]] && [[ "$HOST" != *"["* ]]; then
+            HOST="[$HOST]"
+          fi
+          sshpass -e rsync -avz -e "ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }}" --exclude='.git' ./ ${{ secrets.SSH_USER }}@$HOST:${{ secrets.REMOTE_PATH }}/
 
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          port: ${{ secrets.SSH_PORT }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          script: |
-            cd ${{ secrets.REMOTE_PATH }}
-            npm install --no-bin-links
-            pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot
-            pm2 save
+        env:
+          SSHPASS: ${{ secrets.SSH_PASSWORD }}
+        run: |
+          HOST="${{ secrets.SSH_HOST }}"
+          if [[ "$HOST" == *":"* ]] && [[ "$HOST" != *"["* ]]; then
+            HOST="[$HOST]"
+          fi
+          sshpass -e ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@$HOST "cd ${{ secrets.REMOTE_PATH }} && npm install --no-bin-links && pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot && pm2 save"
