@@ -71,46 +71,67 @@ module.exports = {
                 return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
-            const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus } = require('@discordjs/voice');
-            const path = require('path');
+                const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, entersState, VoiceConnectionStatus } = require('@discordjs/voice');
+                const path = require('path');
 
-            try {
-                const connection = joinVoiceChannel({
-                    channelId: channel.id,
-                    guildId: channel.guild.id,
-                    adapterCreator: channel.guild.voiceAdapterCreator,
-                    selfDeaf: false,
-                    selfMute: false
-                });
+                try {
+                    const connection = joinVoiceChannel({
+                        channelId: channel.id,
+                        guildId: channel.guild.id,
+                        adapterCreator: channel.guild.voiceAdapterCreator,
+                        selfDeaf: false,
+                        selfMute: false
+                    });
 
-                const player = createAudioPlayer();
-                connection.subscribe(player);
+                    // Contournement du bug UDP "connecting => signalling" sur VPS (Discord.js Voice network issues)
+                    connection.on('stateChange', (oldState, newState) => {
+                        console.log(`[RESEAU VOCAL] Changement d'etat: ${oldState.status} => ${newState.status}`);
+                        const oldNetworking = Reflect.get(oldState, 'networking');
+                        const newNetworking = Reflect.get(newState, 'networking');
 
-                const playVenboom = () => {
-                    console.log('[AUDIO] Lancement de venboom.mp3');
-                    const audioPath = path.join(__dirname, '../../venboom.mp3');
-                    const resource = createAudioResource(audioPath);
-                    player.play(resource);
-                };
+                        const networkStateChangeHandler = (oldNetworkState, newNetworkState) => {
+                            const newUdp = Reflect.get(newNetworkState, 'udp');
+                            clearInterval(newUdp?.keepAliveInterval);
+                        }
 
-                // Sondes sur l'état du réseau Discord (UDP/NAT)
-                connection.on('stateChange', (oldState, newState) => {
-                    console.log(`[RESEAU VOCAL] Changement d'etat: ${oldState.status} => ${newState.status}`);
-                    if (newState.status === 'disconnected') {
-                        console.error('[RESEAU VOCAL] Le bot a ete deconnecte par Discord !');
-                    }
-                });
+                        oldNetworking?.off('stateChange', networkStateChangeHandler);
+                        newNetworking?.on('stateChange', networkStateChangeHandler);
 
-                playVenboom();
+                        if (newState.status === 'disconnected') {
+                            console.error('[RESEAU VOCAL] Le bot a ete deconnecte par Discord !');
+                        }
+                    });
 
-                player.on(AudioPlayerStatus.Idle, () => {
-                    console.log('[AUDIO] Fin du fichier, on relance en boucle...');
-                    playVenboom();
-                });
+                    const player = createAudioPlayer();
+                    connection.subscribe(player);
 
-                player.on(AudioPlayerStatus.Playing, () => {
-                    console.log('[AUDIO] Le lecteur indique qu il est en train de LIRE le fichier');
-                });
+                    const playVenboom = () => {
+                        console.log('[AUDIO] Lancement de venboom.mp3');
+                        const audioPath = path.join(__dirname, '../../venboom.mp3');
+                        const resource = createAudioResource(audioPath);
+                        player.play(resource);
+                    };
+
+                    entersState(connection, VoiceConnectionStatus.Ready, 20_000)
+                        .then(() => {
+                            console.log('[AUDIO] Connexion Ready, demarrage de la lecture.');
+                            playVenboom();
+                        })
+                        .catch(err => {
+                            console.error('[AUDIO ERROR] Impossible de se connecter en vocal au bout de 20s:', err);
+                        });
+
+                    player.on(AudioPlayerStatus.Idle, () => {
+                        // On ne relance en boucle QUE si la connexion est officiellement Ready
+                        if (connection.state.status === VoiceConnectionStatus.Ready) {
+                            console.log('[AUDIO] Fin du fichier, on relance en boucle...');
+                            playVenboom();
+                        }
+                    });
+
+                    player.on(AudioPlayerStatus.Playing, () => {
+                        console.log('[AUDIO] Le lecteur indique qu il est en train de LIRE le fichier');
+                    });
 
                 player.on('error', error => {
                     console.error('[AUDIO ERROR] AudioPlayer Error:', error);
