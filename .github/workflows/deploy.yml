@@ -33,4 +33,4 @@ jobs:
           if [[ "$HOST" == *":"* ]] && [[ "$HOST" != *"["* ]]; then
             HOST="[$HOST]"
           fi
-          sshpass -e ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@$HOST "cd ${{ secrets.REMOTE_PATH }} && npm install --no-bin-links && pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot && pm2 save"
+          sshpass -e ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@$HOST 'bash -lc "cd ${{ secrets.REMOTE_PATH }} && npm install --no-bin-links && pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot && pm2 save"'
