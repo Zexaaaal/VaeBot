@@ -15,6 +15,14 @@ jobs:
       - name: Install tools
         run: sudo apt-get update && sudo apt-get install -y sshpass rsync
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
       - name: Copy files to VPS via rsync
         env:
           SSHPASS: ${{ secrets.SSH_PASSWORD }}
@@ -33,4 +41,4 @@ jobs:
           if [[ "$HOST" == *":"* ]] && [[ "$HOST" != *"["* ]]; then
             HOST="[$HOST]"
           fi
-          sshpass -e ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@$HOST 'bash -lc "cd ${{ secrets.REMOTE_PATH }} && npm install --no-bin-links && pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot && pm2 save"'
+          sshpass -e ssh -o StrictHostKeyChecking=no -p ${{ secrets.SSH_PORT }} ${{ secrets.SSH_USER }}@$HOST 'bash -lc "cd ${{ secrets.REMOTE_PATH }} && pm2 restart qi-bot --update-env || pm2 start src/index.js --name qi-bot --interpreter node && pm2 save"'
