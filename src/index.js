@@ -13,6 +13,17 @@ dns.lookup = (hostname, options, callback) => {
     }
     return originalLookup(hostname, options, callback);
 };
+
+process.on('unhandledRejection', (reason, p) => {
+    console.error(' [ANTI-CRASH] Unhandled Rejection/Catch');
+    console.error(reason, p);
+});
+
+process.on('uncaughtException', (err, origin) => {
+    console.error(' [ANTI-CRASH] Uncaught Exception/Catch');
+    console.error(err, origin);
+});
+
 const { Client, GatewayIntentBits, Collection, Partials } = require('discord.js');
 const fs = require('fs');
 const path = require('path');

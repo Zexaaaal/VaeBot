@@ -23,7 +23,7 @@ echo  [4] JUSTE RELANCER LE BOT (Restart)
 echo  [5] ENVOYER LE FICHIER .ENV (Secrets)
 echo  [6] NETTOYAGE COMPLET (Supprimer modules distants)
 echo  [7] ACTIVER LE PONT IPv6 (Depannage Voix)
-echo  [8] METTRE A JOUR DEPUIS GITHUB (Git Pull)
+echo  [8] REINITIALISER LES QI A ZERO (Reset BDD)
 echo  [9] QUITTER
 echo.
 echo ========================================================
@@ -36,7 +36,7 @@ if "%choice%"=="4" goto restart
 if "%choice%"=="5" goto pushenv
 if "%choice%"=="6" goto cleanup
 if "%choice%"=="7" goto nat64
-if "%choice%"=="8" goto gitpull
+if "%choice%"=="8" goto resetbdd
 if "%choice%"=="9" exit
 goto menu
 
@@ -100,16 +100,15 @@ goto menu
 
 :nat64
 cls
-ssh root@%VPS_HOST% -p %VPS_PORT% "echo \"nameserver 2001:4860:4860::6464\" > /etc/resolv.conf"
-echo DNS restaures.
+ssh root@%VPS_HOST% -p %VPS_PORT% "echo \"nameserver 2a01:4f8:c2c:123f::1\" > /etc/resolv.conf && echo \"nameserver 2a00:1098:2b::1\" >> /etc/resolv.conf"
+echo Pont NAT64 public (All/UK) installe.
 pause
 goto menu
 
-:gitpull
+:resetbdd
 cls
-echo Mise a jour depuis GitHub...
-ssh root@%VPS_HOST% -p %VPS_PORT% "cd %REMOTE_DIR% && git -c http.sslVerify=false pull https://github.com.ip6.name/Zexaaaal/VaeBot.git master && npm install --no-bin-links && pm2 restart qi-bot"
-echo.
-echo TERMINE !
+echo Reinitialisation de la base de donnees (QI...)...
+ssh root@%VPS_HOST% -p %VPS_PORT% "sqlite3 %REMOTE_DIR%/data.sqlite 'UPDATE users SET base_qi = 0;'"
+echo Tous les QI de base sont de nouveau a zero !
 pause
 goto menu

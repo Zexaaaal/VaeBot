@@ -27,7 +27,7 @@ module.exports = {
             // Le but souhaité de "set" par l'utilisateur est d'AJOUTER ou SOUSTRAIRE à la base :
             updateBaseQi(targetUser.id, value);
             const newTotalQi = calculateTotalQi(targetUser.id);
-            
+
             const replyMsg = await message.channel.send(`Le QI de <@${targetUser.id}> a été modifié de **${value > 0 ? '+' : ''}${value}**. Nouveau QI Total : **${newTotalQi}**.`);
             setTimeout(() => replyMsg.delete().catch(() => null), 5000);
 
@@ -37,7 +37,7 @@ module.exports = {
             }
         }
 
-        else if (command === 'rollreset') {
+        else if (command === 'resetroll') {
             message.delete().catch(() => null);
             clearAllRollDates();
             const replyMsg = await message.channel.send("Les tirages ont été réinitialisés pour tout le monde !");
@@ -71,75 +71,75 @@ module.exports = {
                 return setTimeout(() => msg.delete().catch(() => null), 5000);
             }
 
-                const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, entersState, VoiceConnectionStatus } = require('@discordjs/voice');
-                const path = require('path');
+            const { joinVoiceChannel, createAudioPlayer, createAudioResource, AudioPlayerStatus, entersState, VoiceConnectionStatus } = require('@discordjs/voice');
+            const path = require('path');
 
-                try {
-                    const connection = joinVoiceChannel({
-                        channelId: channel.id,
-                        guildId: channel.guild.id,
-                        adapterCreator: channel.guild.voiceAdapterCreator,
-                        selfDeaf: false,
-                        selfMute: false
+            try {
+                const connection = joinVoiceChannel({
+                    channelId: channel.id,
+                    guildId: channel.guild.id,
+                    adapterCreator: channel.guild.voiceAdapterCreator,
+                    selfDeaf: false,
+                    selfMute: false
+                });
+
+                // Contournement du bug UDP "connecting => signalling" sur VPS (Discord.js Voice network issues)
+                connection.on('stateChange', (oldState, newState) => {
+                    console.log(`[RESEAU VOCAL] Changement d'etat: ${oldState.status} => ${newState.status}`);
+                    const oldNetworking = Reflect.get(oldState, 'networking');
+                    const newNetworking = Reflect.get(newState, 'networking');
+
+                    const networkStateChangeHandler = (oldNetworkState, newNetworkState) => {
+                        const newUdp = Reflect.get(newNetworkState, 'udp');
+                        clearInterval(newUdp?.keepAliveInterval);
+                    }
+
+                    oldNetworking?.off('stateChange', networkStateChangeHandler);
+                    newNetworking?.on('stateChange', networkStateChangeHandler);
+
+                    if (newState.status === 'disconnected') {
+                        console.error('[RESEAU VOCAL] Le bot a ete deconnecte par Discord !');
+                    }
+                });
+
+                // DEBUGGING ULTIME !
+                connection.on('debug', message => {
+                    console.log(`[RESEAU VOCAL DEBUG] ${message}`);
+                });
+                connection.on('error', error => {
+                    console.error(`[RESEAU VOCAL ERROR] ${error.message}`);
+                });
+
+                const player = createAudioPlayer();
+                connection.subscribe(player);
+
+                const playVenboom = () => {
+                    console.log('[AUDIO] Lancement de venboom.mp3');
+                    const audioPath = path.join(__dirname, '../../venboom.mp3');
+                    const resource = createAudioResource(audioPath);
+                    player.play(resource);
+                };
+
+                entersState(connection, VoiceConnectionStatus.Ready, 20_000)
+                    .then(() => {
+                        console.log('[AUDIO] Connexion Ready, demarrage de la lecture.');
+                        playVenboom();
+                    })
+                    .catch(err => {
+                        console.error('[AUDIO ERROR] Impossible de se connecter en vocal au bout de 20s:', err);
                     });
 
-                    // Contournement du bug UDP "connecting => signalling" sur VPS (Discord.js Voice network issues)
-                    connection.on('stateChange', (oldState, newState) => {
-                        console.log(`[RESEAU VOCAL] Changement d'etat: ${oldState.status} => ${newState.status}`);
-                        const oldNetworking = Reflect.get(oldState, 'networking');
-                        const newNetworking = Reflect.get(newState, 'networking');
+                player.on(AudioPlayerStatus.Idle, () => {
+                    // On ne relance en boucle QUE si la connexion est officiellement Ready
+                    if (connection.state.status === VoiceConnectionStatus.Ready) {
+                        console.log('[AUDIO] Fin du fichier, on relance en boucle...');
+                        playVenboom();
+                    }
+                });
 
-                        const networkStateChangeHandler = (oldNetworkState, newNetworkState) => {
-                            const newUdp = Reflect.get(newNetworkState, 'udp');
-                            clearInterval(newUdp?.keepAliveInterval);
-                        }
-
-                        oldNetworking?.off('stateChange', networkStateChangeHandler);
-                        newNetworking?.on('stateChange', networkStateChangeHandler);
-
-                        if (newState.status === 'disconnected') {
-                            console.error('[RESEAU VOCAL] Le bot a ete deconnecte par Discord !');
-                        }
-                    });
-
-                    // DEBUGGING ULTIME !
-                    connection.on('debug', message => {
-                        console.log(`[RESEAU VOCAL DEBUG] ${message}`);
-                    });
-                    connection.on('error', error => {
-                        console.error(`[RESEAU VOCAL ERROR] ${error.message}`);
-                    });
-
-                    const player = createAudioPlayer();
-                    connection.subscribe(player);
-
-                    const playVenboom = () => {
-                        console.log('[AUDIO] Lancement de venboom.mp3');
-                        const audioPath = path.join(__dirname, '../../venboom.mp3');
-                        const resource = createAudioResource(audioPath);
-                        player.play(resource);
-                    };
-
-                    entersState(connection, VoiceConnectionStatus.Ready, 20_000)
-                        .then(() => {
-                            console.log('[AUDIO] Connexion Ready, demarrage de la lecture.');
-                            playVenboom();
-                        })
-                        .catch(err => {
-                            console.error('[AUDIO ERROR] Impossible de se connecter en vocal au bout de 20s:', err);
-                        });
-
-                    player.on(AudioPlayerStatus.Idle, () => {
-                        // On ne relance en boucle QUE si la connexion est officiellement Ready
-                        if (connection.state.status === VoiceConnectionStatus.Ready) {
-                            console.log('[AUDIO] Fin du fichier, on relance en boucle...');
-                            playVenboom();
-                        }
-                    });
-
-                    player.on(AudioPlayerStatus.Playing, () => {
-                        console.log('[AUDIO] Le lecteur indique qu il est en train de LIRE le fichier');
-                    });
+                player.on(AudioPlayerStatus.Playing, () => {
+                    console.log('[AUDIO] Le lecteur indique qu il est en train de LIRE le fichier');
+                });
 
                 player.on('error', error => {
                     console.error('[AUDIO ERROR] AudioPlayer Error:', error);
